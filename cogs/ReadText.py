@@ -223,7 +223,7 @@ class ReadText(commands.Cog):
         for en in en_list:
             kana = alkana.get_kana(en.lower())
             if kana is None:
-                if len(en) > 2:
+                if len(en) > 3:
                     kana = rome2kana(en2rome(en))
                     text = text.replace(en, kana)
             else:
