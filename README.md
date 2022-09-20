@@ -1,3 +1,21 @@
+"rc" is a library for converting alphabet and hiragana. I'll register it to PyPI.<br>
+
+ChatSource/dictionary.json is like this:
+```
+{"00000000000": "normal", "0000000000000001": "hard"}
+```
+Quiz/quizmode.json is like this:
+```
+{
+  "00000000000": {
+    "deemo": でぃーも
+  },
+  "00000000000001": {
+    "arcaea": あーけあ
+  }
+}
+```
+
 Directory Structure
 
 ```
@@ -39,22 +57,4 @@ Directory Structure
 │   └── rome2kana.json
 ├── requirements.txt
 └── spread-sheet-350909-94d641982b67.json
-```
-
-"rc" is a library for converting alphabet and hiragana. I'll register it to PyPI.<br>
-
-ChatSource/dictionary.json is like this:
-```
-{"00000000000": "normal", "0000000000000001": "hard"}
-```
-Quiz/quizmode.json is like this:
-```
-{
-  "00000000000": {
-    "deemo": でぃーも
-  },
-  "00000000000001": {
-    "arcaea": あーけあ
-  }
-}
 ```
