@@ -15,6 +15,10 @@ Quiz/quizmode.json is like this:
   }
 }
 ```
+If you want to host this bot, please delete cogs/IR.py and line 20 in MusicGameBot.py.
+```
+20 SPREADSHEET_KEY = getenv('SPREADSHEET_KEY')
+```
 
 Directory Structure
 
