@@ -190,7 +190,7 @@ class ReadText(commands.Cog):
     def replace_dic(self, text: str, guild_id: str) -> str:
         """Replace words registerd in the dictionary (json)."""
         text = text.lower()
-        with open("dictionary.json") as f:
+        with open("ChatSource/dictionary.json") as f:
             dicdata = json.load(f)[guild_id]
         dicdata_sorted = sorted(dicdata, key=len, reverse=True)
         for k in dicdata_sorted:
