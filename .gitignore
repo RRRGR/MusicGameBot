@@ -1,0 +1,7 @@
+.env
+spread-sheet-350909-94d641982b67.json
+*.pyc
+__pycache__/
+.DS_Store
+Quiz/quizmode.json
+ChatSource/dictionary.json

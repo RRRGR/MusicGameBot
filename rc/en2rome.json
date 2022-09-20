@@ -1,0 +1,46 @@
+{
+    "e":{
+        "a":"ei",
+        "i":"ai",
+        "u":"uu",
+        "e":"ii",
+        "o":"oo"
+    },
+    "r":{
+        "a":"aa",
+        "i":"aa",
+        "u":"aa",
+        "e":"aa",
+        "o":"oo"
+    },
+    "double":{
+        "aa":"aa",
+        "ai":"ei",
+        "au":"oo",
+        "ae":"a",
+        "ao":"eio",
+        "ia":"ia",
+        "ii":"ii",
+        "iu":"iu",
+        "ie":"ii",
+        "io":"io",
+        "ua":"ua",
+        "ui":"uu",
+        "uu":"uu",
+        "ue":"uu",
+        "uo":"uo",
+        "ea":"ii",
+        "ei":"ii",
+        "eu":"yu",
+        "ee":"ii",
+        "eo":"eo",
+        "oa":"oo",
+        "oi":"oi",
+        "ou":"au",
+        "oe":"oo",
+        "oo":"oo",
+
+        "ph":"f"
+
+    }
+}
