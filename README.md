@@ -1,10 +1,10 @@
 "rc" is a library for converting alphabet and hiragana. I'll register it to PyPI.<br>
 
-ChatSource/dictionary.json is like this:
+Quiz/quizmode.json is like this:
 ```
 {"00000000000": "normal", "0000000000000001": "hard"}
 ```
-Quiz/quizmode.json is like this:
+ChatSource/dictionary.json is like this:
 ```
 {
   "00000000000": {
