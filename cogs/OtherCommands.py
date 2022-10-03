@@ -113,14 +113,14 @@ class OtherCommands(commands.Cog):
                 role = guild.get_role(922736571462070273)
                 await member.remove_roles(role)
             elif str(payload.emoji) == "<:naki:894564513737736273>":
-                role = guild.remove_role(945982876032319548)#プロセカ
+                role = guild.get_role(945982876032319548)#プロセカ
                 await member.remove_roles(role)
             elif str(payload.emoji) == "🎹":
                 role = guild.get_role(945983418284527638)#bms
                 await member.remove_roles(role)
             elif str(payload.emoji) == "🇴":
                 role = guild.get_role(945983567895363604)#osu
-                await member.aremove_roles(role)
+                await member.remove_roles(role)
             elif str(payload.emoji) == "<:genshingood:945986301503623208>":
                 role = guild.get_role(945983209466900541)#原神
                 await member.remove_roles(role)
