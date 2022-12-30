@@ -269,5 +269,5 @@ class IR(commands.Cog):
 
         
 
-def setup(bot):
-    return bot.add_cog(IR(bot))
+async def setup(bot):
+    await bot.add_cog(IR(bot))

@@ -144,6 +144,6 @@ class Gacha(commands.Cog):
     
         
 
-def setup(bot: Bot):
-    return bot.add_cog(Gacha(bot))
+async def setup(bot: Bot):
+    await bot.add_cog(Gacha(bot))
     

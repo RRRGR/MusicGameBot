@@ -209,6 +209,6 @@ class Quiz(commands.Cog):
     
         
 
-def setup(bot):
-    return bot.add_cog(Quiz(bot))
+async def setup(bot):
+    await bot.add_cog(Quiz(bot))
     

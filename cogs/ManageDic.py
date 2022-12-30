@@ -64,8 +64,8 @@ class ManageDic(commands.Cog):
             json.dump(d, f, ensure_ascii=False, indent=2)
 
 
-def setup(bot: Bot):
-    bot.add_cog(ManageDic(bot))
+async def setup(bot: Bot):
+    await bot.add_cog(ManageDic(bot))
 
 
     

@@ -1,10 +1,9 @@
-discord.py[voice] == 1.7.1
+discord.py[voice]
 alkana.py
 beautifulsoup4
 emoji
 html5lib
 lxml
-opencv-python-headless==4.3.0.38
 pandas
 pillow
 pydub

@@ -172,5 +172,5 @@ class SearchInformation(commands.Cog):
 
 
 
-def setup(bot: Bot):
-    bot.add_cog(SearchInformation(bot)) 
+async def setup(bot: Bot):
+    await bot.add_cog(SearchInformation(bot)) 

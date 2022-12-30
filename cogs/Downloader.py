@@ -281,6 +281,6 @@ class DLimage():
 
         
 
-def setup(bot: Bot):
-    return bot.add_cog(Downloader(bot))
+async def setup(bot: Bot):
+    await bot.add_cog(Downloader(bot))
     

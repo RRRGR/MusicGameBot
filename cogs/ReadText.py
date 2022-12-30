@@ -245,8 +245,8 @@ class ReadText(commands.Cog):
 
 
                     
-def setup(bot: Bot):
-    bot.add_cog(ReadText(bot))
+async def setup(bot: Bot):
+    await bot.add_cog(ReadText(bot))
 
     
 
