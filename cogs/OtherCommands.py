@@ -189,7 +189,7 @@ class OtherCommands(commands.Cog):
     @commands.command()
     async def mhelp(self, ctx: Context):
         embed = discord.Embed(title='コマンド')
-        embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url)
+        embed.set_author(name=self.bot.user, icon_url=self.bot.user.display_avatar.url)
         embed.add_field(name='! + 機種名', value='曲ガチャします\n実装済: !arcaea, !deemo, !sdvx', inline=False)
         embed.add_field(name='!sch', value='曲検索を行います。!sch ** 機種名 とすると機種を指定できます\n実装済: arcaea, deemo, sdvx', inline=False)
         embed.add_field(name='!quiz', value='音ゲージャケット絵クイズを出題します。"!quiz chunithm" のように機種を指定することもできます(指定しないと全機種から出題)\n実装済: Arcaea, CHUNITHM, Cytus, Deemo, SDVX', inline=False)
