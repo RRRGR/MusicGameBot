@@ -12,7 +12,7 @@ class Admin(commands.Cog):
     async def reload(self, ctx: Context, module: str):
         """A command for reloading files in cogs."""
         
-        self.bot.reload_extension(module)
+        await self.bot.reload_extension(module)
         await ctx.send(f'Successfully Reloaded {module}.')
 
         

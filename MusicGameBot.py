@@ -3,6 +3,7 @@
 from os import getenv
 from dotenv import load_dotenv
 from discord.ext import commands
+from discord.ext.commands import Bot
 import discord
 
 load_dotenv()
@@ -32,14 +33,20 @@ INITIAL_EXTENSIONS = [
     'cogs.Quiz'
 ]
 
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
+class MusicGameBot(commands.Bot):
+    def __init__(self):
+        super().__init__(
+            command_prefix='!',
+            help_command=None,
+            intents=discord.Intents.all(),
+        )
 
+    async def setup_hook(self):
+        for cog in INITIAL_EXTENSIONS:
+            await self.load_extension(cog)
 
-for cog in INITIAL_EXTENSIONS:
-    bot.load_extension(cog)
+    async def on_ready(self):
+        await self.change_presence(activity=discord.Game(name="Type '!mhelp' for commands"))
 
-@bot.event
-async def on_ready():
-    await bot.change_presence(activity=discord.Game(name="Type '!mhelp' for commands"))
-
-bot.run(TOKEN)
+if __name__ == '__main__':
+    MusicGameBot().run(TOKEN)
