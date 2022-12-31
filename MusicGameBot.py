@@ -25,6 +25,7 @@ OO_JOIN_COMMENT = getenv("OO_JOIN_COMMENT")
 INITIAL_EXTENSIONS = [
     "cogs.Admin",
     "cogs.Downloader",
+    "cogs.EarthMC",
     "cogs.Gacha",
     "cogs.IR",
     "cogs.ManageDic",
