@@ -151,7 +151,7 @@ class ReadText(commands.Cog):
             await ctx.voice_client.disconnect(force=True)
 
     def rmv_emoji(self, text: str) -> str:
-        return re.sub(emoji.get_emoji_regexp(), "", text)
+        return emoji.replace_emoji(text)
 
     def rmv_url(self, text: str) -> str:
         """Replace url string to 'url'."""
