@@ -46,6 +46,7 @@ class MusicGameBot(commands.Bot):
     async def setup_hook(self):
         for cog in INITIAL_EXTENSIONS:
             await self.load_extension(cog)
+        await self.tree.sync()
 
     async def on_ready(self):
         await self.change_presence(

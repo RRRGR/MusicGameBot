@@ -174,24 +174,28 @@ class OtherCommands(commands.Cog):
                 role = guild.get_role(960361568728678470)  # r18
                 await member.remove_roles(role)
 
-    @commands.command()
+    @commands.hybrid_command()
     async def deemocalibration(self, ctx: Context):
+        """Send a spreadsheet link."""
         await ctx.send("https://t.co/9VCJfE2lkZ?")
 
-    @commands.command(aliases=["early"])
+    @commands.hybrid_command(aliases=["early"])
     async def fast(self, ctx: Context):
+        """Show how you should adjust jugdment."""
         await ctx.send(
             "arcaea:-／Ravon:-／Deemo:-,-／Cytus:-／DJMAX:-／OverRapid:-／dynamix:up arrow(decrease)／d4dj:音ズレ調整-判定調整+／pjsekai:+／malody:chart+, hit-, graphic-／voez:-／TAKUMI³:+"
         )
 
-    @commands.command(aliases=["slow"])
+    @commands.hybrid_command(aliases=["slow"])
     async def late(self, ctx: Context):
+        """Show how you should adjust jugdment."""
         await ctx.send(
             "arcaea:+／Ravon:+／Deemo:+,+／Cytus:+／DJMAX:+／OverRapid:+／dynamix:down arrow(increase)／d4dj:音ズレ調整+判定調整-／pjsekai:-／malody:chart-, hit+, graphic+／voez:+／TAKUMI³:-"
         )
 
-    @commands.command()
+    @commands.hybrid_command()
     async def mhelp(self, ctx: Context):
+        """Show MusicGameBot's commands."""
         embed = discord.Embed(title="コマンド")
         embed.set_author(name=self.bot.user, icon_url=self.bot.user.display_avatar.url)
         embed.add_field(

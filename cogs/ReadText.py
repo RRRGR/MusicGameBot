@@ -128,8 +128,9 @@ class ReadText(commands.Cog):
         audio_segment.export(mp3file, format="mp3")
         return mp3file
 
-    @commands.command()
+    @commands.hybrid_command()
     async def mjoin(self, ctx: Context):
+        """Connect to a voice channel where you are."""
         if ctx.author.voice is None:
             await ctx.send("自分、ボイスチャンネルおらへんやん！")
             return
@@ -140,8 +141,9 @@ class ReadText(commands.Cog):
                 await ctx.voice_client.disconnect(force=True)
                 await ctx.author.voice.channel.connect()
 
-    @commands.command()
+    @commands.hybrid_command()
     async def mbye(self, ctx: Context):
+        """Disconnect from a voice channel."""
         if ctx.guild.voice_client is None:
             await ctx.send("接続されてないで。")
             return

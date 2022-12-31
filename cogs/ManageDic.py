@@ -3,7 +3,7 @@
 import json
 
 import discord
-from discord import Member
+from discord import Member, app_commands
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
 
@@ -26,9 +26,10 @@ class ManageDic(commands.Cog):
         else:
             ctx.send("読み方も送れや。")
 
-    @commands.command()
+    @commands.hybrid_command()
+    @app_commands.describe(arg="the word you want to delete")
     async def dltword(self, ctx: Context, arg: str):
-        """Deletes a word and its reading from the json file."""
+        """Deletes a word and its reading."""
 
         d = self.loaddic()
         try:
@@ -38,9 +39,9 @@ class ManageDic(commands.Cog):
         except KeyError:
             await ctx.send("そんな単語登録されてないで。")
 
-    @commands.command()
+    @commands.hybrid_command()
     async def showdict(self, ctx: Context):
-        """Sends the registered pairs of a word and its reading."""
+        """Show the registered pairs of a word and its reading."""
 
         df = self.loaddic()[str(ctx.guild.id)]
         dfkeys = df.keys()
