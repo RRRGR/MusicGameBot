@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 
+import json
+import random
+
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
-import random
-import json
+
 
 class Gacha(commands.Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
-        
+
     @commands.command()
     async def sdvx(self, ctx: Context, *args: str):
         """Send a random SDVX song from LV.13 to LV.20"""
@@ -17,8 +19,8 @@ class Gacha(commands.Cog):
             song, lv = self.get_song("sdvx")
             await ctx.send(song)
         else:
-            under13 = self.judge_under_lv(args,13)
-            above21 = self.judge_above_lv(args,21) 
+            under13 = self.judge_under_lv(args, 13)
+            above21 = self.judge_above_lv(args, 21)
             if under13 != "none":
                 await ctx.send("Lv.13以下は指定できません。")
             if above21 != "none":
@@ -39,7 +41,7 @@ class Gacha(commands.Cog):
     def get_matchlv_sdvxsong(self, arg):
         """"""
         song, lv = self.get_song("sdvx")
-        if self.have_samelv(lv,arg):
+        if self.have_samelv(lv, arg):
             return song
         return self.get_matchlv_sdvxsong(arg)
 
@@ -70,7 +72,7 @@ class Gacha(commands.Cog):
             return "any"
         else:
             return "none"
-    
+
     def have_samelv(self, set1: set, set2: set) -> bool:
         """Judge if the song's LV. is same as user's arg"""
 
@@ -78,7 +80,7 @@ class Gacha(commands.Cog):
             return False
         else:
             return True
-    
+
     @commands.command()
     async def deemo(self, ctx: Context, *args):
         if len(args) == 0:
@@ -87,8 +89,8 @@ class Gacha(commands.Cog):
                 song += self.hard_or_ex()
             await ctx.send(song)
         else:
-            under3 = self.judge_under_lv(args,3)
-            above13 = self.judge_above_lv(args,13)
+            under3 = self.judge_under_lv(args, 3)
+            above13 = self.judge_above_lv(args, 13)
             if under3 != "none":
                 await ctx.send("Lv.3以下のHard譜面は存在しません。")
             if above13 != "none":
@@ -97,7 +99,6 @@ class Gacha(commands.Cog):
                 song = self.get_matchlv_deemosong(args)
                 await ctx.send(song)
 
-        
     def hard_or_ex(self) -> str:
         """Returns Extra or Hard randomly."""
 
@@ -115,7 +116,7 @@ class Gacha(commands.Cog):
                 return song + "(Extra)"
             # else:
             #     return song + "(Hard)"
-        if self.have_samelv(lv,arg):
+        if self.have_samelv(lv, arg):
             return song
         return self.get_matchlv_deemosong(arg)
 
@@ -125,8 +126,8 @@ class Gacha(commands.Cog):
             song, lv = self.get_song("arcaea")
             await ctx.send(song)
         else:
-            under0 = self.judge_under_lv(args,0)
-            above13 = self.judge_above_lv(args,13)
+            under0 = self.judge_under_lv(args, 0)
+            above13 = self.judge_above_lv(args, 13)
             if under0 != "none":
                 await ctx.send("Lv.0以下の譜面は存在しません。")
             if above13 != "none":
@@ -137,13 +138,10 @@ class Gacha(commands.Cog):
 
     def get_matchlv_arcaeasong(self, arg: str) -> str:
         song, lv = self.get_song("arcaea")
-        if self.have_samelv(lv,arg):
+        if self.have_samelv(lv, arg):
             return song, lv
         return self.get_matchlv_arcaeasong(arg)
 
-    
-        
 
 async def setup(bot: Bot):
     await bot.add_cog(Gacha(bot))
-    

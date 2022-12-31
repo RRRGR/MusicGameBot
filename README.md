@@ -1,10 +1,15 @@
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 "rc" is a library for converting alphabet and hiragana. I'll register it to PyPI.<br>
 
 Quiz/quizmode.json is like this:
+
 ```
 {"00000000000": "normal", "0000000000000001": "hard"}
 ```
+
 ChatSource/dictionary.json is like this:
+
 ```
 {
   "00000000000": {
@@ -15,7 +20,9 @@ ChatSource/dictionary.json is like this:
   }
 }
 ```
+
 If you want to host this bot, please delete cogs/IR.py and line 20 in MusicGameBot.py.
+
 ```
 20 SPREADSHEET_KEY = getenv('SPREADSHEET_KEY')
 ```
