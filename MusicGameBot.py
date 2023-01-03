@@ -48,6 +48,7 @@ class MusicGameBot(commands.Bot):
         for cog in INITIAL_EXTENSIONS:
             await self.load_extension(cog)
         await self.tree.sync()
+        await self.tree.sync(guild=discord.Object(id=OO_ID))
 
     async def on_ready(self):
         await self.change_presence(
