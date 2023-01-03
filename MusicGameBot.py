@@ -19,7 +19,7 @@ OO_ROLE_ID = int(getenv("OO_ROLE_ID"))
 AU_ID = int(getenv("AU_ID"))
 GG_ID = int(getenv("GG_ID"))
 OO_ID = int(getenv("OO_ID"))
-SPREADSHEET_KEY = getenv("SPREADSHEET_KEY")
+SPREADSHEET_URL = getenv("SPREADSHEET_URL")
 OO_JOIN_COMMENT = getenv("OO_JOIN_COMMENT")
 
 INITIAL_EXTENSIONS = [

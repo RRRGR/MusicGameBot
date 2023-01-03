@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import asyncio
 import datetime
-import re
+from typing import Literal
 
 import discord
 import gspread
 import pandas as pd
-from discord import channel
+from discord import app_commands
 from discord.ext import commands
+from gspread.worksheet import Worksheet
 from oauth2client.service_account import ServiceAccountCredentials
-from pytz import timezone
 
-from MusicGameBot import SPREADSHEET_KEY
+from MusicGameBot import OO_ID, SPREADSHEET_URL
 
 scope = [
     "https://spreadsheets.google.com/feeds",
@@ -25,258 +24,119 @@ gc = gspread.authorize(credentials)
 
 
 class IR(commands.Cog):
+    literal_apps = Literal[
+        "Arcaea",
+        "プロセカ",
+        "バンドリ",
+        "Deemo",
+        "Cytus",
+        "Cytus2",
+        "VOEZ",
+        "Phigros",
+        "Lanota",
+        "グルミク(通常)",
+        "グルミク(TS)",
+        "UNBEATABLE",
+        "Rotaeno",
+        "Muse Dash",
+        "デレステ",
+    ]
+    literal_courses = Literal["ボケ/Master/最頂点/?", "1", "2", "3", "4"]
+    literal_directions = Literal["左", "右"]
+
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.is_owner()
-    @commands.command(hidden=True)
-    async def ir(self, ctx: commands.Context, *args):
-        id = self.bot.get_channel(ctx.message.guild)
-        if len(args) == 0:
-            embed = discord.Embed(
-                title="IR概要: https://docs.google.com/spreadsheets/d/1C09UnShrHIwbTAdNc6cydr3ySNGWl6k3XbS9uxRU5Oo/edit?usp=sharing",
-                url="https://docs.google.com/spreadsheets/d/1C09UnShrHIwbTAdNc6cydr3ySNGWl6k3XbS9uxRU5Oo/edit?usp=sharing",
-            )
-            embed.add_field(
-                name="スコアの提出方法",
-                value="!ir [機種] [コースNo.] [左or右] [スコア] の書式でコマンドを送信\n誤ってコマンドを入力したら正しいコマンドでもう一度送信してください(それか運営に伝えてくれれば手動でスプシを更新します)。",
-                inline=False,
-            )
-            embed.add_field(
-                name="機種",
-                value="機種名は'arcaea','プロセカ','バンドリ','deemo','cytus','cytus2','voez','phigros','lanota','オバラピ','グルミク','unbeatable','osu','bms'の文字列を使用してください。",
-                inline=False,
-            )
-            embed.add_field(name="コースNo.", value="課題曲一覧のスプシにある番号", inline=False)
-            embed.add_field(
-                name="左or右", value="課題曲一覧のスプシで曲がB列にあったら左、C列だったら右を入力します。", inline=False
-            )
-            embed.add_field(name="スコア", value="機種ごとに求められているスコアを自分で計算して入力してください。")
-            return await ctx.send(embed=embed)
-
-        if len(args) == 1:
-            async with ctx.typing():
-                embed = self.get_rank(args)
-            if embed == 1:
-                return await ctx.send("機種名を正しく入力してください。")
-            return await ctx.send(embed=embed)
-
-        if len(args) == 2:
-            if args[1] == "link":
-                try:
-                    worksheet = gc.open_by_key(SPREADSHEET_KEY).worksheet(
-                        args[0].lower()
-                    )
-                except gspread.exceptions.WorksheetNotFound:
-                    return await ctx.send("機種名を正しく入力してください。")
-                criteria_re = re.compile("https?://[\w!?/+\-_~;.,*&@#$%()'[\]]+")
-                cell_list = worksheet.findall(criteria_re)
-                links = ""
-                for cell in cell_list:
-                    links += f"\n{cell.value}"
-                return await ctx.send(links)
-
-        if not ctx.message.attachments:
-            return await ctx.send("スクショと一緒に投稿してください。")
-        if len(args) != 4:
-            return await ctx.send(
-                "書式が間違っています。!ir [機種] [コースNo.] [左or右] [スコア] の書式で送ってください。"
-            )
-
-        score_error = self.catch_scoreerror(args)
-        if score_error == 1:
-            return await ctx.send("不正なスコアです。")
-        elif score_error == 2:
-            return await ctx.send("提出制限のスコアに達していません。")
-
-        course_error = self.catch_courseerror(args)
-        if course_error == 1:
-            return await ctx.send("コース番号が違います。")
-
-        try:
-            worksheet = gc.open_by_key(SPREADSHEET_KEY).worksheet(args[0].lower())
-        except gspread.exceptions.WorksheetNotFound:
-            return await ctx.send("機種名を正しく入力してください。")
-        try:
-            exitcode = await self.update_score(ctx, args, worksheet)
-        except Exception as e:
-            print(e)
-            return await ctx.send("エラーが発生しました。")
-        if exitcode == 1:
-            return await ctx.send("曲の指定(左or右)が間違っています。")
-
-        await ctx.message.add_reaction("👍")
-
-    def get_rank(self, args: tuple) -> discord.Embed:
-        model = args[0].lower()
-        embed = discord.Embed(title=f"{model} IRランキング")
-
-        def get_courserank(model: str, coursenum: int) -> str:
-            try:
-                worksheet = gc.open_by_key(SPREADSHEET_KEY).worksheet(model)
-            except gspread.exceptions.WorksheetNotFound:
-                return "None"
-            name_index = coursenum * 9 - 6
-            name_list = worksheet.col_values(name_index)
-            score_list = worksheet.col_values(name_index + 1)
-            course_rank = ""
-            if len(name_list) <= 2:
-                course_rank = "スコアが登録されていません。"
-                return course_rank
-            for i in range(2, len(name_list)):
-                if i == 2:
-                    diff_max = (
-                        int(float(score_list[0]) * 100)
-                        - int(float(score_list[i]) * 100)
-                    ) / 100
-                    if diff_max == 0:
-                        diff_max = "MAX"
-                    else:
-                        diff_max = f"MAX-{str(diff_max)}"
-                    course_rank += (
-                        f"{i-1}. {name_list[i]}: {score_list[i]} ({diff_max})"
-                    )
-                else:
-                    diff = (
-                        int(float(score_list[i - 1]) * 100)
-                        - int(float(score_list[i]) * 100)
-                    ) / 100
-                    course_rank += (
-                        f"\n{i-1}. {name_list[i]}: {score_list[i]} (-{str(diff)})"
-                    )
-            return course_rank
-
-        if model == "arcaea":
-            for i in range(1, 7):
-                rank = get_courserank(model, i)
-                embed.add_field(name=f"コース{i}", value=rank, inline=False)
-        elif model == "プロセカ":
-            for i in range(1, 6):
-                rank = get_courserank(model, i)
-                embed.add_field(name=f"コース{i}", value=rank, inline=False)
-        elif model == "グルミク":
-            for i in range(1, 5):
-                rank = get_courserank(model, i)
-                embed.add_field(name=f"コース{i}", value=rank, inline=False)
+    @app_commands.command()
+    @app_commands.describe(
+        app="機種/部門",
+        course="コース",
+        left_right="スプシ上の課題曲の位置\n一曲しかないコースは左",
+        score="換算されたスコア",
+        result="リザルト画像\n時間と共に撮影できると良い",
+    )
+    async def ir(
+        self,
+        interaction: discord.Interaction,
+        app: literal_apps,
+        course: literal_courses,
+        left_right: literal_directions,
+        score: float,
+        result: discord.Attachment,
+    ):
+        """Submit your IR score!"""
+        await interaction.response.defer()
+        url = result.url
+        worksheet = gc.open_by_url(SPREADSHEET_URL).worksheet(app)
+        song, diff = self.update_score(
+            interaction, app, course, left_right, score, url, worksheet
+        )
+        if song is None:
+            embed = self.error_embed()
         else:
-            for i in range(1, 3):
-                rank = get_courserank(model, i)
-                embed.add_field(name=f"コース{i}", value=rank, inline=False)
+            self.sort_sheet(course, worksheet)
+            current_rank = self.get_current_rank(
+                interaction.user.display_name, course, worksheet
+            )
+            embed = self.submission_embed(
+                interaction.user, app, course, song, score, diff, current_rank, url
+            )
+        await interaction.followup.send(embed=embed)
 
-        return embed
-
-    async def update_score(self, ctx: commands.Context, args, worksheet):
-        author = str(ctx.author)[:-5]
-        date = ctx.message.created_at + datetime.timedelta(hours=9)
+    def update_score(
+        self,
+        interaction: discord.Interaction,
+        app: str,
+        course: str,
+        left_right: str,
+        score: float,
+        url: str,
+        worksheet: Worksheet,
+    ) -> tuple[str, str] | tuple[None, None]:
+        author = interaction.user.display_name
+        date = interaction.created_at + datetime.timedelta(hours=9)
         date = date.strftime("%Y-%m-%d %H:%M:%S")
-        url = ctx.message.jump_url
-        model = args[0].lower()
-        coursenum = int(args[1])
-        whichsong = args[2]
-        score = args[3]
 
-        authcol = 9 * coursenum - 6
+        course = self.has_course_error(app, course)
+        if course is None:
+            return None, None
+
+        authcol = 9 * int(course) - 6
         for i in range(3, 100):
             cell_author = worksheet.cell(i, authcol).value
             if cell_author is None:
                 break
             if cell_author == author:
                 break
-            await asyncio.sleep(1)
         row = i
-        await asyncio.sleep(1)
 
-        if whichsong == "左":
+        if left_right == "左":
             worksheet.update_cell(row, authcol, author)
             worksheet.update_cell(row, authcol + 2, score)
             worksheet.update_cell(row, authcol + 4, date)
             worksheet.update_cell(row, authcol + 5, url)
-            return 0
-        elif whichsong == "右":
+
+            song = worksheet.cell(2, authcol + 2).value
+            max = float(worksheet.cell(1, authcol + 2).value)
+        elif left_right == "右":
             worksheet.update_cell(row, authcol, author)
             worksheet.update_cell(row, authcol + 3, score)
             worksheet.update_cell(row, authcol + 4, date)
             worksheet.update_cell(row, authcol + 6, url)
-            return 0
+
+            song = worksheet.cell(2, authcol + 3).value
+            max = float(worksheet.cell(1, authcol + 3).value)
+
+        diff = (int(max * 100) - int(float(score) * 100)) / 100
+        if diff == 0:
+            diff = "MAX"
         else:
-            return 1
+            diff = f"MAX-{str(diff)}"
 
-    def catch_scoreerror(self, args):
-        model = args[0].lower()
-        try:
-            score = float(args[3])
-        except ValueError:
-            return 1
-        if model == "arcaea":
-            if score >= 10005000:
-                return 1
-            if score < 9800000:
-                return 2
-        if model == "プロセカ":
-            if score >= 3000:
-                return 1
-        if model == "バンドリ":
-            if score >= 4000:
-                return 1
-        if model == "deemo":
-            if score >= 1261:
-                return 1
-        if model == "cytus":
-            if score > 100:
-                return 1
-        if model == "cytus2":
-            if score > 100:
-                return 1
-        if model == "voez":
-            if score >= 5000:
-                return 1
-        if model == "phigros":
-            if score > 100:
-                return 1
-        if model == "lanota":
-            if score >= 5000:
-                return 1
-        if model == "オバラピ":
-            if score > 1000000:
-                return 1
-        if model == "グルミク":
-            if score > 4000:
-                return 1
-        if model == "unbeatable":
-            if score > 300:
-                return 1
-        if model == "osu":
-            if score > 1000000:
-                return 1
-        if model == "bms":
-            if score > 15000:
-                return 1
-        return 0
+        return song, diff
 
-    def catch_courseerror(self, args):
-        model = args[0].lower()
-        try:
-            coursenum = int(args[1])
-        except ValueError:
-            return 1
-        if model == "arcaea":
-            if coursenum > 6:
-                return 1
-        elif model == "プロセカ":
-            if coursenum > 5:
-                return 1
-        elif model == "グルミク":
-            if coursenum > 4:
-                return 1
-        else:
-            if coursenum > 2:
-                return 1
-        return 0
-
-    async def sort_sheet(self, args, worksheet):
-        model = args[0].lower()
-        coursenum = int(args[1])
-        authcol = 9 * coursenum - 6
+    def sort_sheet(self, course: str, worksheet: Worksheet) -> None:
+        authcol = 9 * int(course) - 6
         if authcol <= 26:
             alphabet_1 = chr(authcol + 64)
         else:
@@ -288,9 +148,78 @@ class IR(commands.Cog):
         else:
             alphabet_2 = f"B{chr(authcol+70-52)}"
         # worksheet.sort((authcol+4,'asc'), range=f'{alphabet_1}3:{alphabet_2}30')
-        asyncio.sleep(2)
         worksheet.sort((authcol + 1, "des"), range=f"{alphabet_1}3:{alphabet_2}30")
 
+    def submission_embed(
+        self,
+        user: discord.Member,
+        app: str,
+        course: str,
+        song: str,
+        score: float,
+        diff: str,
+        rank: str,
+        img_url: str,
+    ) -> discord.Embed:
 
-async def setup(bot):
-    await bot.add_cog(IR(bot))
+        embed = discord.Embed(
+            title="IR Submission",
+            color=0xFF0000,
+            description="Your score is registered!",
+            url="https://docs.google.com/spreadsheets/d/1AcaH4291rbR4nMzLibisWh5Q5E_h-8Ln2aqvi2NSMRo/edit?usp=sharing",
+        )
+        embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
+        embed.set_image(url=img_url)
+        embed.add_field(name="機種/部門", value=app)
+        embed.add_field(name="コース", value=course)
+        embed.add_field(name="曲", value=song)
+        embed.add_field(name="スコア", value=f"{score} ({diff})")
+        embed.add_field(name="現在の順位", value=f"{rank}位")
+        return embed
+
+    def error_embed(self) -> discord.Embed:
+        embed = discord.Embed(
+            title="IR Submission",
+            color=0xFF0000,
+            description="An error has occurred.",
+            url="https://docs.google.com/spreadsheets/d/1AcaH4291rbR4nMzLibisWh5Q5E_h-8Ln2aqvi2NSMRo/edit?usp=sharing",
+        )
+        embed.set_author(name=self.bot.user, icon_url=self.bot.user.display_avatar.url)
+        embed.add_field(name="Error:", value="機種またはコースの選択に誤りがあります。")
+        return embed
+
+    def has_course_error(self, app: str, course: str) -> str | None:
+        # コース3, 4を選んだ時のエラー
+        if app not in ["Arcaea", "プロセカ", "グルミク(通常)", "Muse Dash"]:
+            if int(course) >= 3:
+                return
+        elif app in ["グルミク(通常)", "Muse Dash"]:
+            if int(course) >= 4:
+                return
+
+        # 特殊コース
+        if app in ["バンドリ", "Deemo", "Cytus", "Cytus2", "グルミク(通常)", "Rotaeno", "デレステ"]:
+            if "ボケ" in course:
+                course = 1
+            else:
+                course = int(course) + 1
+        elif "ボケ" in course:
+            return
+
+        return str(course)
+
+    def get_current_rank(self, author: str, course: str, worksheet: Worksheet) -> int:
+        authcol = 9 * int(course) - 6
+        for i in range(3, 100):
+            cell_author = worksheet.cell(i, authcol).value
+            if cell_author is None:
+                break
+            if cell_author == author:
+                break
+        row = i
+        rank = row - 2
+        return rank
+
+
+async def setup(bot: commands.Bot):
+    await bot.add_cog(IR(bot), guild=discord.Object(id=OO_ID))
