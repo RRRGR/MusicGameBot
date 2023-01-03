@@ -69,7 +69,7 @@ class IR(commands.Cog):
         await interaction.response.defer()
         url = result.url
         worksheet = gc.open_by_url(SPREADSHEET_URL).worksheet(app)
-        song, diff = self.update_score(
+        course, song, diff = self.update_score(
             interaction, app, course, left_right, score, url, worksheet
         )
         if song is None:
@@ -93,14 +93,14 @@ class IR(commands.Cog):
         score: float,
         url: str,
         worksheet: Worksheet,
-    ) -> tuple[str, str] | tuple[None, None]:
+    ) -> tuple[str, str, str] | tuple[None, None, None]:
         author = interaction.user.display_name
         date = interaction.created_at + datetime.timedelta(hours=9)
         date = date.strftime("%Y-%m-%d %H:%M:%S")
 
         course = self.has_course_error(app, course)
         if course is None:
-            return None, None
+            return None, None, None
 
         authcol = 9 * int(course) - 6
         for i in range(3, 100):
@@ -134,7 +134,7 @@ class IR(commands.Cog):
         else:
             diff = f"MAX-{str(diff)}"
 
-        return song, diff
+        return course, song, diff
 
     def sort_sheet(self, course: str, worksheet: Worksheet) -> None:
         authcol = 9 * int(course) - 6
