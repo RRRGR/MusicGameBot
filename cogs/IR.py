@@ -191,7 +191,9 @@ class IR(commands.Cog):
 
     def has_course_error(self, app: str, course: str) -> str | None:
         # コース3, 4を選んだ時のエラー
-        if app not in ["Arcaea", "プロセカ", "グルミク(通常)", "Muse Dash"]:
+        if "ボケ" in course:
+            pass
+        elif app not in ["Arcaea", "プロセカ", "グルミク(通常)", "Muse Dash"]:
             if int(course) >= 3:
                 return
         elif app in ["グルミク(通常)", "Muse Dash"]:
