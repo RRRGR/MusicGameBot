@@ -48,6 +48,7 @@ class IR(commands.Cog):
         self.bot = bot
 
     @app_commands.command()
+    @app_commands.guilds(discord.Object(id=OO_ID))
     @app_commands.describe(
         app="機種/部門",
         course="コース",
