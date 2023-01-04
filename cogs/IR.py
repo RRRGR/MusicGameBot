@@ -207,6 +207,7 @@ class IR(commands.Cog):
             "Deemo",
             "Cytus",
             "Cytus2",
+            "Lanota",
             "グルミク(通常)",
             "Rotaeno",
             "デレステ",
