@@ -40,8 +40,9 @@ class IR(commands.Cog):
         "Rotaeno",
         "Muse Dash",
         "デレステ",
+        "BMS",
     ]
-    literal_courses = Literal["ボケ/Master/最頂点/?", "1", "2", "3", "4"]
+    literal_courses = Literal["ボケ/Master/最頂点/?/★★", "1", "2", "3", "4"]
     literal_directions = Literal["左", "右"]
 
     def __init__(self, bot):
@@ -193,15 +194,24 @@ class IR(commands.Cog):
         # コース3, 4を選んだ時のエラー
         if "ボケ" in course:
             pass
-        elif app not in ["Arcaea", "プロセカ", "グルミク(通常)", "Muse Dash"]:
+        elif app not in ["Arcaea", "プロセカ", "グルミク(通常)", "Muse Dash"]:  # コース2までしかないもの以外
             if int(course) >= 3:
                 return
-        elif app in ["グルミク(通常)", "Muse Dash"]:
+        elif app in ["グルミク(通常)", "Muse Dash", "BMS"]:  # コース3まで
             if int(course) >= 4:
                 return
 
         # 特殊コース
-        if app in ["バンドリ", "Deemo", "Cytus", "Cytus2", "グルミク(通常)", "Rotaeno", "デレステ"]:
+        if app in [
+            "バンドリ",
+            "Deemo",
+            "Cytus",
+            "Cytus2",
+            "グルミク(通常)",
+            "Rotaeno",
+            "デレステ",
+            "BMS",
+        ]:
             if "ボケ" in course:
                 course = 1
             else:
