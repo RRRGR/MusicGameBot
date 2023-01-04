@@ -70,15 +70,15 @@ class IR(commands.Cog):
         await interaction.response.defer()
         url = result.url
         worksheet = gc.open_by_url(SPREADSHEET_URL).worksheet(app)
-        course, song, diff = self.update_score(
+        course, course_num, song, diff = self.update_score(
             interaction, app, course, left_right, score, url, worksheet
         )
         if song is None:
             embed = self.error_embed()
         else:
-            self.sort_sheet(course, worksheet)
+            self.sort_sheet(course_num, worksheet)
             current_rank = self.get_current_rank(
-                interaction.user.display_name, course, worksheet
+                interaction.user.display_name, course_num, worksheet
             )
             embed = self.submission_embed(
                 interaction.user, app, course, song, score, diff, current_rank, url
@@ -99,11 +99,11 @@ class IR(commands.Cog):
         date = interaction.created_at + datetime.timedelta(hours=9)
         date = date.strftime("%Y-%m-%d %H:%M:%S")
 
-        course = self.has_course_error(app, course)
-        if course is None:
+        course_num = self.has_course_error(app, course)
+        if course_num is None:
             return None, None, None
 
-        authcol = 9 * int(course) - 6
+        authcol = 9 * int(course_num) - 6
         for i in range(3, 100):
             cell_author = worksheet.cell(i, authcol).value
             if cell_author is None:
@@ -135,7 +135,7 @@ class IR(commands.Cog):
         else:
             diff = f"MAX-{str(diff)}"
 
-        return course, song, diff
+        return course, course_num, song, diff
 
     def sort_sheet(self, course: str, worksheet: Worksheet) -> None:
         authcol = 9 * int(course) - 6
