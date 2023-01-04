@@ -194,7 +194,7 @@ class IR(commands.Cog):
         # コース3, 4を選んだ時のエラー
         if "ボケ" in course:
             pass
-        elif app not in ["Arcaea", "プロセカ", "グルミク(通常)", "Muse Dash"]:  # コース2までしかないもの以外
+        elif app not in ["Arcaea", "プロセカ", "グルミク(通常)", "Muse Dash", "BMS"]:  # コース2まで
             if int(course) >= 3:
                 return
         elif app in ["グルミク(通常)", "Muse Dash", "BMS"]:  # コース3まで
