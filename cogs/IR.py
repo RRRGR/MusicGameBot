@@ -94,14 +94,14 @@ class IR(commands.Cog):
         score: float,
         url: str,
         worksheet: Worksheet,
-    ) -> tuple[str, str, str] | tuple[None, None, None]:
+    ) -> tuple[str, str, str, str] | tuple[None, None, None, None]:
         author = interaction.user.display_name
         date = interaction.created_at + datetime.timedelta(hours=9)
         date = date.strftime("%Y-%m-%d %H:%M:%S")
 
         course_num = self.has_course_error(app, course)
         if course_num is None:
-            return None, None, None
+            return None, None, None, None
 
         authcol = 9 * int(course_num) - 6
         for i in range(3, 100):
