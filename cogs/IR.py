@@ -219,6 +219,8 @@ class IR(commands.GroupCog, name="ir"):
             "Rotaeno",
             "デレステ",
             "BMS",
+            "Tone Sphere",
+            "OverRapid",
         ]:
             if "ボケ" in course:
                 course = 1
