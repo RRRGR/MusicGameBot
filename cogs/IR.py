@@ -42,6 +42,8 @@ class IR(commands.GroupCog, name="ir"):
         "Muse Dash",
         "デレステ",
         "BMS",
+        "Tone Sphere",
+        "OverRapid",
     ]
     literal_courses = Literal["ボケ/Master/最頂点/?/★★", "1", "2", "3", "4"]
     literal_directions = Literal["左", "右"]
@@ -220,7 +222,6 @@ class IR(commands.GroupCog, name="ir"):
             "デレステ",
             "BMS",
             "Tone Sphere",
-            "OverRapid",
         ]:
             if "ボケ" in course:
                 course = 1
