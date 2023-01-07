@@ -23,7 +23,8 @@ credentials = ServiceAccountCredentials.from_json_keyfile_name(json, scope)
 gc = gspread.authorize(credentials)
 
 
-class IR(commands.Cog):
+@app_commands.guilds(discord.Object(id=OO_ID))
+class IR(commands.GroupCog, name="ir"):
     literal_apps = Literal[
         "Arcaea",
         "プロセカ",
@@ -47,9 +48,9 @@ class IR(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        super().__init__()
 
     @app_commands.command()
-    @app_commands.guilds(discord.Object(id=OO_ID))
     @app_commands.describe(
         app="機種/部門",
         course="コース",
@@ -57,7 +58,7 @@ class IR(commands.Cog):
         score="換算されたスコア",
         result="リザルト画像\n時間と共に撮影できると良い",
     )
-    async def ir(
+    async def submit(
         self,
         interaction: discord.Interaction,
         app: literal_apps,
@@ -129,13 +130,19 @@ class IR(commands.Cog):
             song = worksheet.cell(2, authcol + 3).value
             max = float(worksheet.cell(1, authcol + 3).value)
 
+        diff = self.get_diff(max, score)
+
+        return course, course_num, song, diff
+
+    def get_diff(self, max: float, score: float) -> str:
         diff = (int(max * 100) - int(float(score) * 100)) / 100
         if diff == 0:
             diff = "MAX"
+        elif diff < 0:
+            diff = f"MAX+{str(diff*-1)}"
         else:
             diff = f"MAX-{str(diff)}"
-
-        return course, course_num, song, diff
+        return diff
 
     def sort_sheet(self, course: str, worksheet: Worksheet) -> None:
         authcol = 9 * int(course) - 6
@@ -233,6 +240,67 @@ class IR(commands.Cog):
         row = i
         rank = row - 2
         return rank
+
+    @app_commands.command()
+    @app_commands.describe(
+        app="機種/部門",
+    )
+    async def ranking(self, interaction: discord.Interaction, app: literal_apps):
+        """Show IR ranking."""
+        await interaction.response.defer()
+        ranking_embed = self.make_ranking_embed(app)
+        await interaction.followup.send(embed=ranking_embed)
+
+    def make_ranking_embed(self, app: str) -> discord.Embed:
+        worksheet = gc.open_by_url(SPREADSHEET_URL).worksheet(app)
+        ranking_embed = discord.Embed(
+            title="IR Current Rankings",
+            color=0xFF0000,
+            url="https://docs.google.com/spreadsheets/d/1AcaH4291rbR4nMzLibisWh5Q5E_h-8Ln2aqvi2NSMRo/edit?usp=sharing",
+            description=app,
+        )
+        ranking_embed.set_author(
+            name=self.bot.user, icon_url=self.bot.user.display_avatar.url
+        )
+        for i in range(1, 6):
+            ranking_embed = self.write_course_ranking(i, ranking_embed, worksheet)
+        return ranking_embed
+
+    def write_course_ranking(
+        self, coursenum: int, ranking_embed: discord.Embed, worksheet: Worksheet
+    ):
+        name_col = coursenum * 9 - 6
+        try:
+            course_name = worksheet.cell(1, name_col - 1).value
+        except gspread.exceptions.APIError:  # シートの外側を読み込んだ時
+            return ranking_embed
+        name_list = worksheet.col_values(name_col)[2:]
+        score_col_list = worksheet.col_values(name_col + 1)
+        score_list = score_col_list[2:]
+        ranking_text = ""
+        if len(score_col_list) == 0:
+            return ranking_embed
+        elif len(name_list) == 0:
+            ranking_text = "スコアが登録されていません。"
+            ranking_embed.add_field(name=course_name, value=ranking_text, inline=False)
+            return ranking_embed
+        max = score_col_list[0]
+        for i in range(len(name_list)):
+            score = score_list[i]
+            if i > 0:
+                diff = self.get_diff(float(score_memory), float(score))
+                if diff == "MAX":
+                    ranking_text += f"{i+1}. {name_list[i]}: {score_list[i]} (0)\n"
+                else:
+                    ranking_text += (
+                        f"{i+1}. {name_list[i]}: {score_list[i]} ({diff[3:]})\n"
+                    )
+            else:
+                diff_max = self.get_diff(float(max), float(score))
+                ranking_text += f"{i+1}. {name_list[i]}: {score_list[i]} ({diff_max})\n"
+            score_memory = score
+        ranking_embed.add_field(name=course_name, value=ranking_text, inline=False)
+        return ranking_embed
 
 
 async def setup(bot: commands.Bot):
