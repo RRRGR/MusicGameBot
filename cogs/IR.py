@@ -22,29 +22,31 @@ json = "spread-sheet-350909-94d641982b67.json"
 credentials = ServiceAccountCredentials.from_json_keyfile_name(json, scope)
 gc = gspread.authorize(credentials)
 
+apps_list = [
+    "Arcaea",
+    "プロセカ",
+    "バンドリ",
+    "Deemo",
+    "Cytus",
+    "Cytus2",
+    "VOEZ",
+    "Phigros",
+    "Lanota",
+    "グルミク(通常)",
+    "グルミク(TS)",
+    "UNBEATABLE",
+    "Rotaeno",
+    "Muse Dash",
+    "デレステ",
+    "BMS",
+    "Tone Sphere",
+    "OverRapid",
+]
+
 
 @app_commands.guilds(discord.Object(id=OO_ID))
 class IR(commands.GroupCog, name="ir"):
-    literal_apps = Literal[
-        "Arcaea",
-        "プロセカ",
-        "バンドリ",
-        "Deemo",
-        "Cytus",
-        "Cytus2",
-        "VOEZ",
-        "Phigros",
-        "Lanota",
-        "グルミク(通常)",
-        "グルミク(TS)",
-        "UNBEATABLE",
-        "Rotaeno",
-        "Muse Dash",
-        "デレステ",
-        "BMS",
-        "Tone Sphere",
-        "OverRapid",
-    ]
+    literal_apps = Literal[tuple(apps_list)]
     literal_courses = Literal["ボケ/Master/最頂点/?/★★", "1", "2", "3", "4"]
     literal_directions = Literal["左", "右"]
 
