@@ -307,6 +307,138 @@ class IR(commands.GroupCog, name="ir"):
         ranking_embed.add_field(name=course_name, value=ranking_text, inline=False)
         return ranking_embed
 
+    @app_commands.command()
+    @app_commands.describe(
+        app="機種/部門",
+        result="リザルト画像\n時間と共に撮影できると良い",
+    )
+    async def submit2(
+        self,
+        interaction: discord.Interaction,
+        app: literal_apps,
+        result: discord.Attachment,
+    ):
+        """Submit your IR score!"""
+        await interaction.response.defer()
+        await interaction.followup.send(
+            view=DropdownView(SongsDropdown(interaction, app, result))
+        )
+
+
+class SongsDropdown(discord.ui.Select):
+    def __init__(
+        self,
+        interaction: discord.Interaction,
+        app: str,
+        result: discord.Attachment,
+    ):
+        self.interaction = interaction
+        self.app = app
+        self.result = result
+        self.worksheet = gc.open_by_url(SPREADSHEET_URL).worksheet(app)
+        self.ir = IR(commands.Bot)
+
+        songs_list = []
+        for i in range(1, 6):
+            song1_col = i * 9 - 4
+            try:
+                song1 = self.worksheet.cell(2, song1_col).value
+                if song1 is None:
+                    break
+                songs_list.append(song1)
+                song2 = self.worksheet.cell(2, song1_col + 1).value
+                if song2 is not None:
+                    songs_list.append(song2)
+            except gspread.exceptions.APIError:
+                break
+        options = [discord.SelectOption(label=song) for song in songs_list]
+        super().__init__(
+            placeholder="Choose a song.", min_values=1, max_values=1, options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_modal(
+            ScoreModal(self.app, self.values[0], self.result, self.worksheet)
+        )
+
+
+class DropdownView(discord.ui.View):
+    def __init__(self, DropdownClass):
+        super().__init__()
+        self.add_item(DropdownClass)
+
+
+class ScoreModal(discord.ui.Modal, title="IR Submission"):
+    def __init__(
+        self, app: str, song: str, result: discord.Attachment, worksheet: Worksheet
+    ):
+        self.app = app
+        self.song = song
+        self.song_col = worksheet.find(song).col
+        self.max = int(worksheet.cell(1, self.song_col).value)
+        self.result = result
+        self.worksheet = worksheet
+        self.ir = IR(commands.Bot)
+        super().__init__()
+        self.score = discord.ui.TextInput(
+            label=f"Score ({song[:30]})", placeholder=f"0 ~ {self.max}"
+        )
+        self.add_item(self.score)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        score = float(self.score.value)
+        course, course_num, diff = self.update_score_from_song(interaction, score)
+        self.ir.sort_sheet(course_num, self.worksheet)
+        current_rank = self.ir.get_current_rank(
+            interaction.user.display_name, course_num, self.worksheet
+        )
+        embed = self.ir.submission_embed(
+            interaction.user,
+            self.app,
+            course,
+            self.song,
+            score,
+            diff,
+            current_rank,
+            self.result.url,
+        )
+        await interaction.followup.edit_message(
+            interaction.message.id, embed=embed, view=None
+        )
+
+    def update_score_from_song(
+        self, interaction: discord.Interaction, score: float
+    ) -> tuple[str, str, str]:
+        author = interaction.user.display_name
+        date = interaction.created_at + datetime.timedelta(hours=9)
+        date = date.strftime("%Y-%m-%d %H:%M:%S")
+
+        song_col = self.worksheet.find(self.song).col
+
+        if self.worksheet.cell(2, song_col - 2).value == "名前":
+            authcol = song_col - 2
+        else:
+            authcol = song_col - 3
+        for i in range(3, 100):
+            cell_author = self.worksheet.cell(i, authcol).value
+            if cell_author is None:
+                break
+            if cell_author == author:
+                break
+        row = i
+
+        self.worksheet.update_cell(row, authcol, author)
+        self.worksheet.update_cell(row, song_col, score)
+        self.worksheet.update_cell(row, authcol + 4, date)
+        self.worksheet.update_cell(row, song_col + 3, self.result.url)
+
+        diff = self.ir.get_diff(self.max, score)
+        course = self.worksheet.cell(1, authcol - 1).value
+        course_num = str(int((authcol + 6) / 9))
+
+        return course, course_num, diff
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(IR(bot), guild=discord.Object(id=OO_ID))
