@@ -51,7 +51,7 @@ class ManageDic(commands.Cog):
         embed = discord.Embed(
             title="登録単語", description=text, color=discord.Colour.gold()
         )
-        embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url)
+        embed.set_author(name=self.bot.user, icon_url=self.bot.user.display_avatar.url)
         await ctx.send(embed=embed)
 
     def loaddic(self) -> dict:
