@@ -214,7 +214,7 @@ class Quiz(commands.Cog):
             )
         else:
             self.set_embed_place(embed, sorted_result)
-        embed.set_author(name="Result", icon_url=self.bot.user.avatar_url)
+        embed.set_author(name="Result", icon_url=self.bot.user.display_avatar.url)
         await ctx.send(embed=embed)
 
     def set_embed_place(self, embed: Embed, sorted_result: list):
