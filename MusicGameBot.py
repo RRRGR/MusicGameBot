@@ -9,6 +9,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = getenv("TOKEN")
+DB_USER = getenv("DB_USER")
+DB_PASSWORD = getenv("DB_PASSWORD")
+DB_HOST = getenv("DB_HOST")
+DB_NAME = getenv("DB_NAME")
+OPENJTALK_DIC_PATH = getenv("OPENJTALK_DIC_PATH")
+OPENJTALK_VOICE_PATH = getenv("OPENJTALK_VOICE_PATH")
 AU_CHAT_ID = int(getenv("AU_CHAT_ID"))
 GC_CHAT_ID = int(getenv("GC_CHAT_ID"))
 GG_CHAT_ID = int(getenv("GG_CHAT_ID"))
@@ -48,7 +54,7 @@ class MusicGameBot(commands.Bot):
         for cog in INITIAL_EXTENSIONS:
             await self.load_extension(cog)
         await self.tree.sync()
-        await self.tree.sync(guild=discord.Object(id=OO_ID))
+        await self.tree.sync(guild=discord.Object(id=GG_ID))
 
     async def on_ready(self):
         await self.change_presence(
