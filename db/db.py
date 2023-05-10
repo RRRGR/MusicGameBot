@@ -22,7 +22,6 @@ class MusicGameBotDB:
     #     return cls._instance
 
     # def get_connection(self):
-    #     print(self._pool)
     #     return self._pool.get_connection()
 
     def get_connection(self) -> mariadb.Connection | None:
@@ -41,8 +40,6 @@ class MusicGameBotDB:
 
     def get_join_channel(self, guild_id: int) -> int:
         conn = self.get_connection()
-        print(conn)
-        print(conn is None)
         cur = conn.cursor()
 
         cur.execute(
@@ -50,11 +47,13 @@ class MusicGameBotDB:
             (guild_id,),
         )
         result = cur.fetchone()
-        print(result[0])
 
         cur.close()
         conn.close()
-        return result[0]
+        try:
+            return result[0]
+        except:
+            return
 
     def update_join_channel(self, guild_id: int, channel_id: int) -> None:
         conn = self.get_connection()
