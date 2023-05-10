@@ -23,9 +23,9 @@ class ManageDic(commands.Cog):
             self.db.upsert_pronunciation(ctx.guild.id, word, pronunciation)
             await ctx.send(f"{word}を{pronunciation}として覚えたで。")
         elif len(args) > 2:
-            ctx.send("'単語 読み方'の形式で送ってください。")
+            await ctx.send("'単語 読み方'の形式で送ってください。")
         else:
-            ctx.send("読み方も送れや。")
+            await ctx.send("読み方も送れや。")
 
     @commands.is_owner()
     @commands.command(hidden=True)
@@ -33,12 +33,12 @@ class ManageDic(commands.Cog):
         if len(args) == 3:
             word = args[0]
             pronunciation = args[1]
-            self.db.upsert_pronunciation(args[2], word, pronunciation)
+            self.db.upsert_pronunciation(int(args[2]), word, pronunciation)
             await ctx.send(f"{word}を{pronunciation}として覚えたで。")
         elif len(args) > 3:
-            ctx.send("'単語 読み方 ⚪︎⚪︎'の形式で送ってください。")
+            await ctx.send("'単語 読み方 ⚪︎⚪︎'の形式で送ってください。")
         else:
-            ctx.send("読み方も送れや。")
+            await ctx.send("読み方も送れや。")
 
     @commands.hybrid_command()
     @app_commands.describe(arg="the word you want to delete")
