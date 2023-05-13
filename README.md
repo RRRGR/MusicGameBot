@@ -8,19 +8,6 @@ Quiz/quizmode.json is like this:
 {"00000000000": "normal", "0000000000000001": "hard"}
 ```
 
-ChatSource/dictionary.json is like this:
-
-```
-{
-  "00000000000": {
-    "deemo": でぃーも
-  },
-  "00000000000001": {
-    "arcaea": あーけあ
-  }
-}
-```
-
 If you want to host this bot, please delete cogs/IR.py and line 20 in MusicGameBot.py.
 
 ```
@@ -31,13 +18,6 @@ Directory Structure
 
 ```
 .
-├── ChatSource
-│   ├── dictionary.json
-│   ├── enoutput.mp3
-│   ├── enoutput.wav
-│   ├── input.txt
-│   ├── output.mp3
-│   └── output.wav
 ├── MusicGameBot.py //start bot
 ├── Quiz
 │   ├── arcaeaimage
