@@ -201,17 +201,29 @@ class MusicGameBotDB:
         cur.close()
         conn.close()
 
-    def get_emoji_count_by_guild_id(self, guild_id: int, hour=720):
+    def get_emoji_count_by_guild_id(
+        self, guild_id: int, hour=720, user_id: int | None = None
+    ):
         conn = self.get_connection()
         cur = conn.cursor()
 
-        cur.execute(
-            "SELECT PartialEmoji_str, COUNT(*) AS emoji_count FROM emoji_log WHERE guild_id=? AND used_at >= DATE_SUB(NOW(), INTERVAL ? HOUR) GROUP BY PartialEmoji_str ORDER BY emoji_count DESC",
-            (
-                guild_id,
-                hour,
-            ),
-        )
+        if user_id is None:
+            cur.execute(
+                "SELECT PartialEmoji_str, COUNT(*) AS emoji_count FROM emoji_log WHERE guild_id=? AND used_at >= DATE_SUB(NOW(), INTERVAL ? HOUR) GROUP BY PartialEmoji_str ORDER BY emoji_count DESC",
+                (
+                    guild_id,
+                    hour,
+                ),
+            )
+        else:
+            cur.execute(
+                "SELECT PartialEmoji_str, COUNT(*) AS emoji_count FROM emoji_log WHERE guild_id=? AND user_id=? AND used_at >= DATE_SUB(NOW(), INTERVAL ? HOUR) GROUP BY PartialEmoji_str ORDER BY emoji_count DESC",
+                (
+                    guild_id,
+                    user_id,
+                    hour,
+                ),
+            )
         result = cur.fetchall()
 
         cur.close()
