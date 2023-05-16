@@ -46,11 +46,11 @@ class Emoji(commands.Cog):
             (year * 365 * 24) + (month * 30 * 24) + (week * 7 * 24) + (day * 24) + hour
         )
         if me:
-            result = self.db.get_emoji_count_by_guild_id(interaction.guild_id, hour_sum)
-        else:
             result = self.db.get_emoji_count_by_guild_id(
                 interaction.guild_id, hour_sum, interaction.user.id
             )
+        else:
+            result = self.db.get_emoji_count_by_guild_id(interaction.guild_id, hour_sum)
         interval = ""
         if year != 0:
             interval += f"{year}年"
