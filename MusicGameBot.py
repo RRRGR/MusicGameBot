@@ -32,6 +32,7 @@ INITIAL_EXTENSIONS = [
     "cogs.Admin",
     "cogs.Downloader",
     "cogs.EarthMC",
+    "cogs.Emoji",
     "cogs.Gacha",
     "cogs.IR",
     "cogs.ManageDic",

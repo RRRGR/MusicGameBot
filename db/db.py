@@ -180,3 +180,35 @@ class MusicGameBotDB:
         cur.close()
         conn.close()
         return result
+
+    def add_emoji_use(
+        self, guild_id: int, PartialEmoji_str: str, is_message: bool, is_reaction: bool
+    ) -> None:
+        conn = self.get_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "INSERT INTO emoji_log (guild_id, PartialEmoji_str, is_message, is_reaction) VALUES (?, ?, ?, ?)",
+            (guild_id, PartialEmoji_str, is_message, is_reaction),
+        )
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+    def get_emoji_count_by_guild_id(self, guild_id: int, hour=720):
+        conn = self.get_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT PartialEmoji_str, COUNT(*) AS emoji_count FROM emoji_log WHERE guild_id=? AND used_at >= DATE_SUB(NOW(), INTERVAL ? HOUR) GROUP BY PartialEmoji_str ORDER BY emoji_count DESC",
+            (
+                guild_id,
+                hour,
+            ),
+        )
+        result = cur.fetchall()
+
+        cur.close()
+        conn.close()
+        return result
