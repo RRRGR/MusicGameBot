@@ -62,6 +62,8 @@ class Emoji(commands.Cog):
         for stats_tuple in result:
             counter += 1
             ranking_text += f"{counter}. {stats_tuple[0]}, {stats_tuple[1]}回\n"
+            if len(ranking_text) > 900:
+                break
         embed.add_field(name="Ranking", value=ranking_text)
         await interaction.followup.send(embed=embed)
 
