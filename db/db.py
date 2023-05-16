@@ -182,13 +182,18 @@ class MusicGameBotDB:
         return result
 
     def add_emoji_use(
-        self, guild_id: int, user_id: int, PartialEmoji_str: str, is_message: bool, is_reaction: bool
+        self,
+        guild_id: int,
+        user_id: int,
+        PartialEmoji_str: str,
+        is_message: bool,
+        is_reaction: bool,
     ) -> None:
         conn = self.get_connection()
         cur = conn.cursor()
 
         cur.execute(
-            "INSERT INTO emoji_log (guild_id, user_id, PartialEmoji_str, is_message, is_reaction) VALUES (?, ?, ?, ?)",
+            "INSERT INTO emoji_log (guild_id, user_id, PartialEmoji_str, is_message, is_reaction) VALUES (?, ?, ?, ?, ?)",
             (guild_id, user_id, PartialEmoji_str, is_message, is_reaction),
         )
         conn.commit()
