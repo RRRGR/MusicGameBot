@@ -4,7 +4,6 @@ from os import getenv
 
 import discord
 from discord.ext import commands
-from discord.ext.commands import Bot
 from dotenv import load_dotenv
 
 load_dotenv()

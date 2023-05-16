@@ -11,7 +11,6 @@ import emoji
 from discord import Message
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
-from pydub import AudioSegment, audio_segment
 
 from db.db import MusicGameBotDB
 from MusicGameBot import OPENJTALK_DIC_PATH, OPENJTALK_VOICE_PATH

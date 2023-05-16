@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import discord
-from discord import Member, app_commands
+from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
 

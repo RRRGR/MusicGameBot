@@ -3,7 +3,7 @@
 import discord
 from discord import Message, PartialEmoji, RawReactionActionEvent, app_commands
 from discord.ext import commands
-from discord.ext.commands import Bot, Context
+from discord.ext.commands import Bot
 
 from db.db import MusicGameBotDB
 from MusicGameBot import AU_ROLE_ID, OO_ROLE_ID
@@ -44,7 +44,6 @@ class Emoji(commands.Cog):
             (year * 365 * 24) + (month * 30 * 24) + (week * 7 * 24) + (day * 24) + hour
         )
         result = self.db.get_emoji_count_by_guild_id(interaction.guild_id, hour_sum)
-        print(result)
         interval = ""
         if year != 0:
             interval += f"{year}年"

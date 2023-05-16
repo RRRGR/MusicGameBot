@@ -5,7 +5,6 @@ from typing import Literal
 
 import discord
 import gspread
-import pandas as pd
 from discord import app_commands
 from discord.ext import commands
 from gspread.worksheet import Worksheet
@@ -174,7 +173,6 @@ class IR(commands.GroupCog, name="ir"):
         rank: str,
         img_url: str,
     ) -> discord.Embed:
-
         embed = discord.Embed(
             title="IR Submission",
             color=0xFF0000,
