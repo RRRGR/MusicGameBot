@@ -24,6 +24,7 @@ class Emoji(commands.Cog):
                 partial_emoji = PartialEmoji.from_str(f"{emoji.name}:{emoji.id}")
                 self.db.add_emoji_use(
                     message.guild.id,
+                    message.author.id,
                     str(partial_emoji),
                     is_message=True,
                     is_reaction=False,
@@ -71,7 +72,11 @@ class Emoji(commands.Cog):
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
         guild_id = payload.guild_id
         self.db.add_emoji_use(
-            guild_id, str(payload.emoji), is_message=False, is_reaction=True
+            guild_id,
+            payload.user_id,
+            str(payload.emoji),
+            is_message=False,
+            is_reaction=True,
         )
 
         channel = self.bot.get_channel(payload.channel_id)
