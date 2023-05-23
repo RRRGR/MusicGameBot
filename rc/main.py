@@ -4,7 +4,6 @@ from numpy import single
 
 
 def han2kana(hangle: str) -> str:
-
     """
     Return the reading of hangle word as hiragana.
     """
@@ -17,7 +16,6 @@ def han2kana(hangle: str) -> str:
 
 
 def en2kana(en: str) -> str:
-
     vowels = ["a", "i", "u", "e", "o"]
     kana = ""
 
@@ -28,7 +26,6 @@ def en2kana(en: str) -> str:
     skip = []
     done_silent_e = False
     for i in range(len(en)):
-
         if i in skip:
             skip.remove(i)
             counter += 1
@@ -79,7 +76,6 @@ def en2kana(en: str) -> str:
 
 
 def en2rome(en: str) -> str:
-
     vowels = ["a", "i", "u", "e", "o"]
     rome = ""
 
@@ -172,7 +168,6 @@ def rome2kana(rome: str) -> str:
 
     skip = []
     for i in range(len(rome)):
-
         if i in skip:
             skip.remove(i)
             continue
