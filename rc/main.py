@@ -76,6 +76,8 @@ def en2kana(en: str) -> str:
 
 
 def en2rome(en: str) -> str:
+    en = en.lower()
+
     vowels = ["a", "i", "u", "e", "o"]
     rome = ""
 
