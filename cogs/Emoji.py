@@ -5,14 +5,16 @@ from discord import Message, PartialEmoji, RawReactionActionEvent, app_commands
 from discord.ext import commands
 from discord.ext.commands import Bot
 
+from api.api import MusicGameBotAPI
 from db.db import MusicGameBotDB
 from MusicGameBot import AU_ROLE_ID, OO_ROLE_ID
 
 
-class Emoji(commands.Cog):
+class Emoji(commands.GroupCog, name="emoji"):
     def __init__(self, bot: Bot):
         self.bot = bot
         self.db = MusicGameBotDB()
+        self.api = MusicGameBotAPI()
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):
@@ -30,27 +32,52 @@ class Emoji(commands.Cog):
                     is_reaction=False,
                 )
 
+    def hour_to_year_month_day_hour(self, hour: int) -> tuple[int, int, int, int, int]:
+        hours_in_day = 24
+        hours_in_week = 7 * hours_in_day
+        hours_in_month = 30 * hours_in_day
+        hours_in_year = 365 * hours_in_day
+
+        year = hour // hours_in_year
+        hour %= hours_in_year
+        months = hour // hours_in_month
+        hour %= hours_in_month
+        week = hour // hours_in_week
+        hour %= hours_in_week
+        day = hour // hours_in_day
+        hour %= hours_in_day
+
+        return year, months, week, day, hour
+
+    def get_hour_from_year_month_week_day_hour(
+        self, year: int, month: int, week: int, day: int, hour: int
+    ) -> int:
+        return (
+            (year * 365 * 24) + (month * 30 * 24) + (week * 7 * 24) + (day * 24) + hour
+        )
+
     @app_commands.command()
-    async def emoji_stats(
+    @app_commands.describe(year="期間を設定しないと1ヶ月になります")
+    async def usage_rank(
         self,
         interaction: discord.Interaction,
         year: int = 0,
-        month: int = 1,
+        month: int = 0,
         week: int = 0,
         day: int = 0,
         hour: int = 0,
         me: bool = False,
     ):
+        "サーバー内で使用頻度の高い絵文字をランキングとして出力"
         await interaction.response.defer()
-        hour_sum = (
-            (year * 365 * 24) + (month * 30 * 24) + (week * 7 * 24) + (day * 24) + hour
+        hour = self.get_hour_from_year_month_week_day_hour(year, month, week, day, hour)
+        hour = None if hour == 0 else hour
+        user_id = interaction.user.id if me else None
+        result = self.api.get_emoji_count_by_guild_id(
+            interaction.guild_id, hour, user_id
         )
-        if me:
-            result = self.db.get_emoji_count_by_guild_id(
-                interaction.guild_id, hour_sum, interaction.user.id
-            )
-        else:
-            result = self.db.get_emoji_count_by_guild_id(interaction.guild_id, hour_sum)
+        hour = result["hour"]
+        year, month, week, day, hour = self.hour_to_year_month_day_hour(hour)
         interval = ""
         if year != 0:
             interval += f"{year}年"
@@ -65,15 +92,56 @@ class Emoji(commands.Cog):
         interval += "前"
         embed = discord.Embed(title="絵文字使用状況", description=f"{interval}〜現在まで")
         ranking_text = ""
-        counter = 0
-        for stats_tuple in result:
-            counter += 1
-            ranking_text += f"{counter}. {stats_tuple[0]}, {stats_tuple[1]}回\n"
+        for ranking in result["rankings"]:
+            ranking_text += f"{ranking['rank']}. {ranking['PartialEmoji_str']}, {ranking['usage_count']}回\n"
             if len(ranking_text) > 900:
                 break
         if len(ranking_text) == 0:
             ranking_text = "No emoji has been used."
         embed.add_field(name="Ranking", value=ranking_text)
+        await interaction.followup.send(embed=embed)
+
+    @app_commands.command()
+    @app_commands.describe(emoji="指定しないと全絵文字の使用回数を出力します", year="期間を設定しないと1ヶ月になります")
+    async def member_rank(
+        self,
+        interaction: discord.Interaction,
+        emoji: str | None,
+        year: int = 0,
+        month: int = 0,
+        week: int = 0,
+        day: int = 0,
+        hour: int = 0,
+    ):
+        "絵文字を指定するとその絵文字の使用回数の多い人を出力"
+        await interaction.response.defer()
+        hour = self.get_hour_from_year_month_week_day_hour(year, month, week, day, hour)
+        hour = None if hour == 0 else hour
+        result = self.api.get_member_rank(interaction.guild_id, emoji, hour)
+        hour = result["hour"]
+        year, month, week, day, hour = self.hour_to_year_month_day_hour(hour)
+        interval = ""
+        if year != 0:
+            interval += f"{year}年"
+        if month != 0:
+            interval += f"{month}ヶ月"
+        if week != 0:
+            interval += f"{week}週間"
+        if day != 0:
+            interval += f"{day}日"
+        if hour != 0:
+            interval += f"{hour}時間"
+        interval += "前"
+        embed = discord.Embed(title="絵文字使用状況", description=f"{interval}〜現在まで")
+        ranking_text = ""
+        for ranking in result["rankings"]:
+            ranking_text += f"{ranking['rank']}. {self.bot.get_user(ranking['user_id'])}, {ranking['usage_count']}回\n"
+            if len(ranking_text) > 900:
+                break
+        if len(ranking_text) == 0:
+            ranking_text = "The emoji has not been used."
+        field_name = f"Ranking of {emoji}" if emoji else "Ranking"
+        embed.add_field(name=field_name, value=ranking_text)
         await interaction.followup.send(embed=embed)
 
     @commands.Cog.listener()
