@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import emoji as em
 import discord
 from discord import Message, PartialEmoji, RawReactionActionEvent, app_commands
 from discord.ext import commands
@@ -31,6 +32,20 @@ class Emoji(commands.GroupCog, name="emoji"):
                     is_message=True,
                     is_reaction=False,
                 )
+
+        match_emoji_list = em.emoji_list(message.content)
+        emoji_list = []
+        for match_emoji in match_emoji_list:
+            emoji_list.append(match_emoji["emoji"])
+        emoji_list = list(set(emoji_list))
+        for emoji in emoji_list:
+            self.db.add_emoji_use(
+                message.guild.id,
+                message.author.id,
+                emoji,
+                is_message=True,
+                is_reaction=False,
+            )
 
     def hour_to_year_month_day_hour(self, hour: int) -> tuple[int, int, int, int, int]:
         hours_in_day = 24
