@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import emoji as em
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -71,39 +70,52 @@ class FriendCode(commands.GroupCog, name="friend_code"):
 
     @app_commands.command()
     @app_commands.describe(
-        game_title="ゲームの名前 available_gameで出てくるタイトル以外入力不可",
-        me="Trueで自分だけのフレコを出力",
         member="ユーザーを指定してその人のフレコを出力",
+        game_title="ゲームの名前 available_gameで出てくるタイトル以外入力不可",
     )
     async def show(
         self,
         interaction: discord.Interaction,
-        game_title: str,
-        me: bool = True,
-        member: discord.Member | None = None,
+        member: discord.Member | None,
+        game_title: str | None,
     ):
         "登録されているフレコを出力"
         await interaction.response.defer()
-        if me:
-            user_id = interaction.user.id
-        if member is not None:
-            user_id = member.id
-        if me or member is not None:
-            result = self.api.get_friend_code(user_id, game_title)
-        else:
-            result = self.api.get_friend_code(game_title=game_title)
-        embed = discord.Embed(title="Friend Code", description=game_title)
-        friend_code_text = ""
-        for fc in result["friend_codes"]:
-            friend_code_text += (
-                f"{self.bot.get_user(fc['user_id'])}, {fc['friend_code']}\n"
+        if member is None and game_title is None:
+            return await interaction.followup.send("memberかgame_titleのどちらかは指定してください")
+        user_id = member.id if member else None
+        result = self.api.get_friend_code(user_id, game_title)
+        if user_id is not None:
+            embed = discord.Embed(
+                title="Friend Code",
+                description=self.bot.get_user(user_id).mention,
             )
-            if len(friend_code_text) > 900:
-                break
-        if len(friend_code_text) == 0:
-            friend_code_text = "No friend code has been registered."
-        field_name = "Friend Code"
-        embed.add_field(name=field_name, value=friend_code_text)
+            friend_code_text = ""
+            for fc in result["friend_codes"]:
+                friend_code_text += f"{fc['game_title']}: {fc['friend_code']}\n"
+                if len(friend_code_text) > 900:
+                    break
+            if len(friend_code_text) == 0:
+                friend_code_text = "No friend code has been registered."
+            field_name = "Friend Code"
+            embed.add_field(name=field_name, value=friend_code_text)
+
+        elif game_title is not None:
+            embed = discord.Embed(
+                title="Friend Code",
+                description=game_title,
+            )
+            friend_code_text = ""
+            for fc in result["friend_codes"]:
+                friend_code_text += (
+                    f"{self.bot.get_user(fc['user_id']).mention}: {fc['friend_code']}\n"
+                )
+                if len(friend_code_text) > 900:
+                    break
+            if len(friend_code_text) == 0:
+                friend_code_text = "No friend code has been registered."
+            field_name = "Friend Code"
+            embed.add_field(name=field_name, value=friend_code_text)
         await interaction.followup.send(embed=embed)
 
     @app_commands.command()
