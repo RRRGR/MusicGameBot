@@ -46,9 +46,10 @@ class FriendCode(commands.GroupCog, name="friend_code"):
             interaction.user.id, game_title, friend_code
         )
         if success:
-            await interaction.followup.send(
-                f"Your friend code {friend_code} ({game_title}) has been registered."
-            )
+            mention = interaction.user.mention
+            embed = discord.Embed(title="Friend Code", description=mention)
+            embed.add_field(name=game_title, value=friend_code)
+            await interaction.followup.send(embed=embed)
         else:
             await interaction.followup.send("Failed.")
 
