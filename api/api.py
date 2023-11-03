@@ -120,3 +120,37 @@ class MusicGameBotAPI:
             return data
         else:
             print(f"Failed to fetch data. Status code: {response.status_code}")
+
+    def insert_message_log(self, guild_id: int, channel_id: int, user_id: int):
+        api_url = os.path.join(API_URL, "message", "log")
+        data = {"guild_id": guild_id, "channel_id": channel_id, "user_id": user_id}
+        session = requests.Session()
+        session.auth = HTTPBasicAuth(API_USERNAME, API_PASSWORD)
+        response = session.post(api_url, json=data)
+
+        if response.status_code == 200:
+            print("POST request was successful.")
+            return True
+        else:
+            print(f"POST request failed with status code: {response.status_code}")
+            return False
+
+    def get_message_count(
+        self, guild_id: int, channel_id: int | None, user_id: int, hours: int
+    ):
+        api_url = os.path.join(API_URL, "message", "count")
+        query_params = {
+            "guild_id": guild_id,
+            "channel_id": channel_id,
+            "user_id": user_id,
+            "hours": hours,
+        }
+        session = requests.Session()
+        session.auth = HTTPBasicAuth(API_USERNAME, API_PASSWORD)
+        response = session.get(api_url, params=query_params)
+
+        if response.status_code == 200:
+            data = response.json()
+            return data
+        else:
+            print(f"Failed to fetch data. Status code: {response.status_code}")

@@ -1,16 +1,24 @@
 # -*- coding: utf-8 -*-
 
 import discord
-from discord import Member
+from discord import Member, Message
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
 
 from MusicGameBot import GG_ID, OO_ID, OO_JOIN_COMMENT
+from api.api import MusicGameBotAPI
 
 
 class OtherCommands(commands.Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
+        self.api = MusicGameBotAPI()
+
+    @commands.Cog.listener()
+    async def on_message(self, message: Message):
+        self.api.insert_message_log(
+            message.guild.id, message.channel.id, message.author.id
+        )
 
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
