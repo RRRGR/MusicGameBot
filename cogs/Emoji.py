@@ -210,7 +210,7 @@ class Emoji(commands.GroupCog, name="emoji"):
             elif str(payload.emoji) == "🚓":
                 role = guild.get_role(1007307402091188325)  # malody
                 await member.add_roles(role)
-            elif str(payload.emoji) == "<:yumesute_like:1170271329065373716> ":
+            elif str(payload.emoji) == "<:yumesute_like:1170271329065373716>":
                 role = guild.get_role(1140641222042583062)  # ユメステ
                 await member.add_roles(role)
 
@@ -290,7 +290,7 @@ class Emoji(commands.GroupCog, name="emoji"):
             elif str(payload.emoji) == "🚓":
                 role = guild.get_role(1007307402091188325)  # malody
                 await member.remove_roles(role)
-            elif str(payload.emoji) == "<:yumesute_like:1170271329065373716> ":
+            elif str(payload.emoji) == "<:yumesute_like:1170271329065373716>":
                 role = guild.get_role(1140641222042583062)  # ユメステ
                 await member.remove_roles(role)
 
