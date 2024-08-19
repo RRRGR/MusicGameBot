@@ -15,7 +15,6 @@ class FriendCode(commands.GroupCog, name="friend_code"):
         self.api = MusicGameBotAPI()
 
     @commands.is_owner()
-    @commands.command(hidden=True)
     async def add_game(self, ctx: Context, game_title: str):
         success = self.api.add_friend_code_game(game_title)
         if success:
@@ -24,7 +23,6 @@ class FriendCode(commands.GroupCog, name="friend_code"):
             await ctx.send("Failed.")
 
     @commands.is_owner()
-    @commands.command(hidden=True)
     async def delete_game(self, ctx: Context, game_title: str):
         success = self.api.delete_friend_code_game(game_title)
         if success:
@@ -34,7 +32,8 @@ class FriendCode(commands.GroupCog, name="friend_code"):
 
     @app_commands.command()
     @app_commands.describe(
-        game_title="ゲームの名前 available_gameで出てくるタイトル以外入力不可", friend_code="フレンドコードを入力"
+        game_title="ゲームの名前 available_gameで出てくるタイトル以外入力不可",
+        friend_code="フレンドコードを入力",
     )
     async def add(
         self, interaction: discord.Interaction, game_title: str, friend_code: str
@@ -53,7 +52,9 @@ class FriendCode(commands.GroupCog, name="friend_code"):
             await interaction.followup.send("Failed.")
 
     @app_commands.command()
-    @app_commands.describe(game_title="ゲームの名前 available_gameで出てくるタイトル以外入力不可")
+    @app_commands.describe(
+        game_title="ゲームの名前 available_gameで出てくるタイトル以外入力不可"
+    )
     async def delete(self, interaction: discord.Interaction, game_title: str):
         "ゲームの名前を指定して登録されている自分のフレコを削除"
         await interaction.response.defer()
@@ -82,7 +83,9 @@ class FriendCode(commands.GroupCog, name="friend_code"):
         "登録されているフレコを出力"
         await interaction.response.defer()
         if member is None and game_title is None:
-            return await interaction.followup.send("memberかgame_titleのどちらかは指定してください")
+            return await interaction.followup.send(
+                "memberかgame_titleのどちらかは指定してください"
+            )
         user_id = member.id if member else None
         result = self.api.get_friend_code(user_id, game_title)
         if user_id is not None:
