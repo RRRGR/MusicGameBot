@@ -14,16 +14,18 @@ class FriendCode(commands.GroupCog, name="friend_code"):
         self.bot = bot
         self.api = MusicGameBotAPI()
 
+    @commands.command()
     @commands.is_owner()
-    async def add_game(self, ctx: Context, game_title: str):
+    async def friend_code_add_game(self, ctx: Context, game_title: str):
         success = self.api.add_friend_code_game(game_title)
         if success:
             await ctx.send(f"{game_title} has been added.")
         else:
             await ctx.send("Failed.")
 
+    @commands.command()
     @commands.is_owner()
-    async def delete_game(self, ctx: Context, game_title: str):
+    async def friend_code_delete_game(self, ctx: Context, game_title: str):
         success = self.api.delete_friend_code_game(game_title)
         if success:
             await ctx.send(f"{game_title} has been deleted.")
