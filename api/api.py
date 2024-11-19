@@ -154,3 +154,48 @@ class MusicGameBotAPI:
             return data
         else:
             print(f"Failed to fetch data. Status code: {response.status_code}")
+
+    def search_songs(self, title: str, game_name: str | None, artist: str | None):
+        api_url = os.path.join(API_URL, "rhythmgamedb", "songs")
+        query_params = {
+            "title": title,
+            "game_name": game_name,
+            "artist": artist,
+        }
+        session = requests.Session()
+        session.auth = HTTPBasicAuth(API_USERNAME, API_PASSWORD)
+        response = session.get(api_url, params=query_params)
+
+        if response.status_code == 200:
+            data = response.json()
+            return data
+        else:
+            print(f"Failed to fetch data. Status code: {response.status_code}")
+
+    def get_random_songs(self, game_name: str | None, level: str | None):
+        api_url = os.path.join(API_URL, "rhythmgamedb", "random-song")
+        query_params = {
+            "game_name": game_name,
+            "level": level,
+        }
+        session = requests.Session()
+        session.auth = HTTPBasicAuth(API_USERNAME, API_PASSWORD)
+        response = session.get(api_url, params=query_params)
+
+        if response.status_code == 200:
+            data = response.json()
+            return data
+        else:
+            print(f"Failed to fetch data. Status code: {response.status_code}")
+
+    def get_rgdb_game_names(self):
+        api_url = os.path.join(API_URL, "rhythmgamedb", "game-names")
+        session = requests.Session()
+        session.auth = HTTPBasicAuth(API_USERNAME, API_PASSWORD)
+        response = session.get(api_url)
+
+        if response.status_code == 200:
+            data = response.json()
+            return data
+        else:
+            print(f"Failed to fetch data. Status code: {response.status_code}")

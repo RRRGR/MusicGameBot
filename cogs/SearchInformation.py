@@ -1,205 +1,179 @@
 # -*- coding: utf-8 -*-
 
-import json
-import re
-import urllib
-
+import datetime
+import os
 import discord
-import pandas
-import requests
-from bs4 import BeautifulSoup
 from discord import Embed
+from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
-from pandas import DataFrame
+from typing import List
+
+from api.api import MusicGameBotAPI
+from MusicGameBot import PATH_TO_IMAGE
 
 
-class SearchInformation(commands.Cog):
-    def __init__(self, bot: Bot):
+class SearchInformation(commands.GroupCog, name="song"):
+    def __init__(self, bot):
         self.bot = bot
-        self.searchable_models = ["sdvx", "deemo", "arcaea"]
+        self.api = MusicGameBotAPI()
+        super().__init__()
 
-    @commands.command()
-    async def sch(self, ctx: Context, *args: str):
-        if args[-1].lower() in self.searchable_models:
-            model = args[-1]
-            songname = " ".join(str(i) for i in args[:-1])
-            song_candidate_list, model = self.search_songlist(songname, model)
-        else:
-            songname = " ".join(str(i) for i in args)
-            song_candidate_list, model = self.search_songlist(songname)
-
-        if song_candidate_list is None:
+    @app_commands.command()
+    @app_commands.describe(title="曲名", game="機種名", artist="作曲者等")
+    async def search(
+        self,
+        interaction: discord.Interaction,
+        title: str,
+        game: str | None,
+        artist: str | None,
+    ):
+        """Search Songs"""
+        await interaction.response.defer()
+        result = self.api.search_songs(title, game, artist)
+        num_songs = result["total"]
+        if num_songs == 0:
             embed = discord.Embed(
-                title=songname,
-                description="Nothing was found.",
+                title=title,
+                description="No results found.",
                 color=discord.Colour.blue(),
             )
-        elif len(song_candidate_list) == 1:
-            embed = self.get_embed(song_candidate_list[0], model)
+            await interaction.followup.send(embed=embed)
+        elif num_songs == 1:
+            file, embed = make_embed(result["songs"][0])
+            await interaction.followup.send(file=file, embed=embed)
         else:
-            song_candidates = "\n".join(song_candidate_list)
-            embed = discord.Embed(
-                title=songname, description=song_candidates, color=discord.Colour.blue()
+            await interaction.followup.send(
+                view=DropdownView(SongsDropdown(result["songs"]))
             )
-        await ctx.send(embed=embed)
 
-    def search_songlist(self, songname: str, model=None):
-        with open("Quiz/songlist.json", "r") as f:
-            songlist = json.load(f)
-        song_candidate = []
-        if model is None:
-            for model in self.searchable_models:
-                for song in songlist[model]:
-                    if songname.lower() in song.lower():
-                        song_candidate.append(song)
-                if len(song_candidate) > 0:
-                    break
-        else:
-            for song in songlist[model]:
-                if songname.lower() in song.lower():
-                    song_candidate.append(song)
-        if len(song_candidate) > 0:
-            return song_candidate, model
-        else:
-            return None, None
-
-    def get_embed(self, song: str, model: str) -> Embed:
-        if model == "deemo":
-            embed = self.set_deemo_info(song)
-        if model == "sdvx":
-            embed = self.set_sdvx_info(song)
-        if model == "arcaea":
-            embed = self.set_arcaea_info(song)
-        return embed
-
-    def creat_wikiurl(self, gamemodel: str, songname: str) -> str:
-        url = "https://wikiwiki.jp/"
-        url += urllib.parse.quote(gamemodel + "/" + songname)
-        return url
-
-    def get_df(self, url: str) -> DataFrame:
-        fetched_dataframes = pandas.io.html.read_html(url, encoding="utf-8")
-        df = fetched_dataframes[0]
-        return df
-
-    def make_embed(self, url: str) -> Embed:
-        embed = discord.Embed(title="result", color=discord.Colour.blue(), url=url)
-        return embed
-
-    def set_deemo_info(self, song: str) -> Embed:
-        url = self.creat_wikiurl("deemo", song)
-        df = self.get_df(url)
-        embed = discord.Embed(
-            title="Result (click here to see the wiki page)",
-            color=discord.Colour.blue(),
-            url=url,
-        )
-        embed.set_author(
-            name="Deemo",
-            url="https://apps.apple.com/jp/app/deemo/id700637744?uo=4",
-            icon_url="https://is1-ssl.mzstatic.com/image/thumb/Purple125/v4/21/64/9a/21649a6e-143c-be37-10fb-73aa0106b6f3/source/100x100bb.jpg",
-        )
-        level_notes = self.get_deemo_level_notes(df)
-        embed.add_field(name="Level, Notes", value=level_notes)
-        for index, row in df[2:].iterrows():
-            embed.add_field(name=str(row[0]), value=row[1])
-        return embed
-
-    def get_deemo_level_notes(self, df: DataFrame) -> str:
-        level_notes = ""
-        for column_name, item in df.loc[:, "Easy":].iteritems():
-            level_notes_val = f"{str(column_name)}: {item[0]}, {item[1]} \n"
-            level_notes += level_notes_val
-        return level_notes
-
-    def get_arcaea_level_notes(self, df: DataFrame) -> str:
-        arcaea_levels = ["Past", "Present", "Future", "Beyond"]
-        level_notes = ""
-        for column_name, item in df[2:5].iloc[:, 2:].iteritems():
-            if item.iloc[0] not in arcaea_levels:
-                break
-            LNval = f"{str(item.iloc[0])}: {item.iloc[1]}, {item.iloc[2]} \n"
-            level_notes += LNval
-        return level_notes
-
-    def set_arcaea_info(self, song: str) -> Embed:
-        url = self.creat_wikiurl("arcaea", song)
-        df = self.get_df(url)
-        embed = discord.Embed(
-            title="Result (clicke here to see the wiki page)",
-            color=discord.Colour.blue(),
-            url=url,
-        )
-        embed.set_author(
-            name="Arcaea",
-            url="https://apps.apple.com/us/app/arcaea/id1205999125?uo=4",
-            icon_url="https://is5-ssl.mzstatic.com/image/thumb/Purple125/v4/80/6d/cf/806dcf4e-f68f-4ec0-d63b-01fa624346ba/source/100x100bb.jpg",
-        )
-        level_notes = self.get_arcaea_level_notes(df)
-        embed.add_field(name="Level, Notes", value=level_notes)
-        embed = self.set_arcaea_other_infos(df, embed)
-        return embed
-
-    def set_arcaea_other_infos(self, df: DataFrame, embed: Embed) -> Embed:
-        for index, row in df.iterrows():
-            if row[0] == "Difficulty" or row[0] == "Level" or row[0] == "Notes":
-                continue
-            else:
-                if row[0] != row[1]:
-                    embed.add_field(name=row[0] + " " + row[1], value=row[2])
-                else:
-                    embed.add_field(name=row[0], value=row[2])
-        return embed
-
-    def get_sdvx_songpage(self, song: str):
-        songlist_page_url = "https://w.atwiki.jp/sdvx/pages/8759.html"
-        html = requests.get(songlist_page_url)
-        soup = BeautifulSoup(html.content, "html.parser")
-        titles = soup.find_all(href=re.compile("atwiki"))
-        for title in titles:
-            title_name = title.get("title")
-            if title_name != None and song in title_name:
-                url = title.get("href")
-                return "https:" + url
-        return None
-
-    def get_sdvx_df(self, url: str) -> DataFrame:
-        dfs = pandas.io.html.read_html(url, encoding="utf-8")
-        for df in dfs:
-            if len(df) > 1:
-                break
-        return df
-
-    def set_sdvx_info(self, song: str):
-        url = self.get_sdvx_songpage(song)
-        if url != None:
-            df = self.get_sdvx_df(url)
-            level_notes = self.get_sdvx_level_notes(df)
+    @app_commands.command()
+    @app_commands.describe(game="機種名", level="レベル (e.g. 20, 14+)")
+    async def gacha(
+        self,
+        interaction: discord.Interaction,
+        game: str | None,
+        level: str | None,
+    ):
+        """曲ガチャ"""
+        await interaction.response.defer()
+        result = self.api.get_random_songs(game, level)
+        if result["total"] == 0:
             embed = discord.Embed(
-                title="Result (click here to see the wiki page)",
+                title="Gacha",
+                description="No results found.",
                 color=discord.Colour.blue(),
-                url=url,
             )
-            embed.set_author(
-                name="SOUND VOLTEX",
-                url="https://p.eagate.573.jp/game/sdvx/vi/",
-                icon_url="https://eacache.s.konaminet.jp/game/sdvx/vi/images/menu/logo.png",
-            )
-            embed.add_field(name="Level, Notes", value=level_notes)
-            for column_name, item in df.iloc[:, 3:].iteritems():
-                embed.add_field(name=str(column_name), value=item[0])
-            return embed
-        return None
+            return await interaction.followup.send(embed=embed)
+        file, embed = make_embed(result["songs"][0])
+        await interaction.followup.send(file=file, embed=embed)
 
-    def get_sdvx_level_notes(self, df: DataFrame):
-        level_notes = ""
-        for i in range(len(df)):
-            df_row = df[i : i + 1]
-            level_notes += "{}: {}, {}\n".format(
-                df_row.iat[0, 0], df_row.iat[0, 1], df_row.iat[0, 2]
+    @search.autocomplete("game")
+    @gacha.autocomplete("game")
+    async def game_title_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> List[app_commands.Choice[str]]:
+        game_names = self.api.get_rgdb_game_names()
+        return [
+            app_commands.Choice(
+                name=game_name["game_name"], value=game_name["game_name"]
             )
-        return level_notes
+            for game_name in game_names["game_names"]
+            if current.lower() in game_name["game_name"].lower()
+        ]
+
+
+def make_embed(song_data):
+    title = song_data["title"]
+    artist = song_data["artist"]
+    category = song_data["category"]
+    image_path = os.path.join(PATH_TO_IMAGE, song_data["jacket_image"])
+    length = song_data["length"]
+    bpm_main = song_data["bpm_main"]
+    bpm_min = song_data["bpm_min"]
+    bpm_max = song_data["bpm_max"]
+    description = song_data["description"]
+    song_url = song_data["song_url"]
+    wiki_url = song_data["wiki_url"]
+    release_date = song_data["release_date"]
+    chart_data = song_data["charts"]
+    file = discord.File(image_path, filename="image.jpg")
+    embed = discord.Embed(
+        title=f"Result: {title}",
+        color=discord.Colour.blue(),
+        url=wiki_url,
+    )
+    embed.set_image(url="attachment://image.jpg")
+    embed.add_field(name="Artist", value=artist) if artist else None
+    embed.add_field(name="Category", value=category) if category else None
+    (
+        embed.add_field(name="Length", value=datetime.timedelta(seconds=length))
+        if length
+        else None
+    )
+    embed.add_field(name="BPM (main)", value=bpm_main) if bpm_main else None
+    embed.add_field(name="BPM (min)", value=bpm_min) if bpm_min else None
+    embed.add_field(name="BPM (max)", value=bpm_max) if bpm_max else None
+    embed.add_field(name="Others", value=description) if description else None
+    embed.add_field(name="URL", value=song_url) if song_url else None
+    embed.add_field(name="Release", value=release_date) if release_date else None
+    for diff in chart_data:
+        difficulty_name = diff["difficulty"]
+        level = diff["level"]
+        const = diff["const"]
+        num_notes = diff["num_notes"]
+        designer = diff["designer"]
+        diff_text = level
+        if const:
+            diff_text += f" ({const})"
+        if num_notes:
+            diff_text += f", {num_notes} notes"
+        if designer:
+            diff_text += f", by {designer}"
+        embed.add_field(name=difficulty_name, value=diff_text)
+    return file, embed
+
+
+class SongsDropdown(discord.ui.Select):
+    def __init__(
+        self,
+        song_list: list,
+    ):
+        self.song_list = song_list
+        options = []
+        for i, song_data in enumerate(song_list):
+            song_title_with_game = f"[{song_data['game_name']}] {song_data['title']} ({song_data['artist']})"
+            options.append(
+                discord.SelectOption(label=song_title_with_game[:100], value=i)
+            )
+            if i >= 24:
+                break
+        super().__init__(
+            placeholder="Choose a song from result.",
+            min_values=1,
+            max_values=1,
+            options=options,
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        api = MusicGameBotAPI()
+        selected_index = int(self.values[0])
+        selected_song_data = self.song_list[selected_index]
+        result = api.search_songs(
+            selected_song_data["title"],
+            selected_song_data["game_name"],
+            selected_song_data["artist"],
+        )
+        file, embed = make_embed(result["songs"][0])
+        await interaction.message.edit(embed=embed, attachments=[file], view=None)
+
+
+class DropdownView(discord.ui.View):
+    def __init__(self, DropdownClass):
+        super().__init__()
+        self.add_item(DropdownClass)
 
 
 async def setup(bot: Bot):
