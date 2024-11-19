@@ -2,6 +2,7 @@
 
 import discord
 from discord import Member, Message
+from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
 
@@ -47,13 +48,32 @@ class OtherCommands(commands.Cog):
             "arcaea:+／Ravon:+／Deemo:+,+／Cytus:+／DJMAX:+／OverRapid:+／dynamix:down arrow(increase)／d4dj:音ズレ調整+判定調整-／pjsekai:-／malody:chart-, hit+, graphic+／voez:+／TAKUMI³:-"
         )
 
+    @app_commands.command(
+        name="count", description="Count number of messages in a thread"
+    )
+    @app_commands.describe(id="Thread ID")
+    async def count(
+        self,
+        interaction: discord.Interaction,
+        id: str,
+    ):
+        """Count number of messages in a thread"""
+        await interaction.response.defer()
+        try:
+            thread = await self.bot.fetch_channel(int(id))
+            await interaction.followup.send(thread.message_count)
+        except discord.HTTPException as e:
+            await interaction.followup.send(f"An error occurred: {e}")
+
     @commands.hybrid_command()
     async def mhelp(self, ctx: Context):
         """Show MusicGameBot's commands."""
         embed = discord.Embed(title="コマンド")
         embed.set_author(name=self.bot.user, icon_url=self.bot.user.display_avatar.url)
         embed.add_field(
-            name="! + 機種名", value="曲ガチャします\n実装済: !arcaea, !deemo, !sdvx", inline=False
+            name="! + 機種名",
+            value="曲ガチャします\n実装済: !arcaea, !deemo, !sdvx",
+            inline=False,
         )
         embed.add_field(
             name="!sch",
@@ -65,19 +85,31 @@ class OtherCommands(commands.Cog):
             value='音ゲージャケット絵クイズを出題します。"!quiz chunithm" のように機種を指定することもできます(指定しないと全機種から出題)\n実装済: Arcaea, CHUNITHM, Cytus, Deemo, SDVX',
             inline=False,
         )
-        embed.add_field(name="!game [機種] [出題数]", value="quizを連続で出題します。連続MAX100題")
+        embed.add_field(
+            name="!game [機種] [出題数]", value="quizを連続で出題します。連続MAX100題"
+        )
         embed.add_field(
             name="!quizmode + 難易度",
             value="クイズの難易度を指定して画像の切り取られる面積を変更します。難易度指定はhardかnormalのみ",
         )
         embed.add_field(name="!mjoin/!mbye", value="それぞれVCに接続、切断します")
-        embed.add_field(name="!addword", value='"コマンド 文字列 読み方"で辞書に読み上げ方を追加します')
-        embed.add_field(name="!dltword", value='"コマンド 文字列"で辞書からその文字列の読み上げ方を削除します')
         embed.add_field(
-            name="!fast/!late", value="それぞれ早グレと遅グレが出るときの判定の動かす方向を出します", inline=False
+            name="!addword",
+            value='"コマンド 文字列 読み方"で辞書に読み上げ方を追加します',
         )
         embed.add_field(
-            name="!deemocalibration", value="deemoの曲ごとの判定調整の値を出します", inline=False
+            name="!dltword",
+            value='"コマンド 文字列"で辞書からその文字列の読み上げ方を削除します',
+        )
+        embed.add_field(
+            name="!fast/!late",
+            value="それぞれ早グレと遅グレが出るときの判定の動かす方向を出します",
+            inline=False,
+        )
+        embed.add_field(
+            name="!deemocalibration",
+            value="deemoの曲ごとの判定調整の値を出します",
+            inline=False,
         )
         await ctx.send(embed=embed)
 
