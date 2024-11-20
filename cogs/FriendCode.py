@@ -73,7 +73,7 @@ class FriendCode(commands.GroupCog, name="friend_code"):
 
     @app_commands.command()
     @app_commands.describe(
-        member="ユーザーを指定してその人のフレコを出力",
+        member="ユーザーを指定してその人のフレコを出力 指定無しの場合は自分",
         game_title="ゲームの名前 available_gameで出てくるタイトル以外入力不可",
     )
     async def show(
@@ -85,9 +85,7 @@ class FriendCode(commands.GroupCog, name="friend_code"):
         "登録されているフレコを出力"
         await interaction.response.defer()
         if member is None and game_title is None:
-            return await interaction.followup.send(
-                "memberかgame_titleのどちらかは指定してください"
-            )
+            member = interaction.user
         user_id = member.id if member else None
         result = self.api.get_friend_code(user_id, game_title)
         if user_id is not None:
