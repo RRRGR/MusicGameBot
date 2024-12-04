@@ -5,6 +5,12 @@ from discord import Member, Message
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import base64
+import io
 
 from MusicGameBot import GG_ID, OO_ID, OO_JOIN_COMMENT
 from api.api import MusicGameBotAPI
@@ -28,6 +34,61 @@ class OtherCommands(commands.Cog):
 
         if member.guild.id == OO_ID:
             await member.guild.system_channel.send(member.mention + OO_JOIN_COMMENT)
+
+    @app_commands.command(name="best_songs", description="Get a best songs image")
+    @app_commands.choices(
+        game=[
+            app_commands.Choice(name="CHUNITHM", value="chunithm"),
+            app_commands.Choice(name="ONGEKI", value="ongeki"),
+        ]
+    )
+    @app_commands.describe(
+        game="Game", name_or_id="Chunirec Username/OngekiScoreLog ID"
+    )
+    async def best_songs(
+        self,
+        interaction: discord.Interaction,
+        game: app_commands.Choice[str],
+        name_or_id: str,
+    ):
+        """Get a best songs image"""
+        await interaction.response.defer()
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        driver = webdriver.Chrome(options=options)
+        result_img_src = None
+        if game.name == "CHUNITHM":
+            driver.get("https://reiwa.f5.si/newbestimg/chunithm/")
+            try:
+                driver.find_element(By.ID, "chunirec_username").send_keys(name_or_id)
+                driver.find_element(By.ID, "generate").click()
+                result_img = WebDriverWait(driver, 15).until(
+                    EC.presence_of_element_located((By.ID, "result-img"))
+                )
+                result_img_src = result_img.get_attribute("src")
+            finally:
+                driver.quit()
+        elif game.name == "ONGEKI":
+            driver.get("https://reiwa.f5.si/newbestimg/ongeki/")
+            try:
+                driver.find_element(By.ID, "osl_id").send_keys(name_or_id)
+                driver.find_element(By.ID, "generate").click()
+
+                result_img = WebDriverWait(driver, 15).until(
+                    EC.presence_of_element_located((By.ID, "result-img"))
+                )
+                result_img_src = result_img.get_attribute("src")
+            finally:
+                driver.quit()
+        if result_img_src:
+            header, base64_data = result_img_src.split(",", 1)
+            image_data = base64.b64decode(base64_data)
+            file = discord.File(io.BytesIO(image_data), filename="image.jpg")
+            await interaction.followup.send(file=file)
+        else:
+            await interaction.followup.send("Counldn't get the image.")
 
     @commands.hybrid_command()
     async def deemocalibration(self, ctx: Context):
