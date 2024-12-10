@@ -62,7 +62,7 @@ class SearchInformation(commands.GroupCog, name="song"):
         game: str | None,
         artist: str | None,
     ):
-        """Search Songs"""
+        """Show Chart Image"""
         await interaction.response.defer()
         result = self.api.search_songs(title, game, artist)
         num_songs = result["total"]
@@ -288,7 +288,10 @@ class DifficultyDropdown(discord.ui.Select):
         driver = webdriver.Chrome(options=options)
         driver.get(selected_url)
         driver.set_window_size(5000, 2000)
-        table = driver.find_element(By.CSS_SELECTOR, "table.l td.tbg")
+        wait = WebDriverWait(driver, 15)
+        table = wait.until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "table.l td.tbg"))
+        )
         file = discord.File(BytesIO(table.screenshot_as_png), filename="image.jpg")
         driver.quit()
         if interaction.response.is_done():
