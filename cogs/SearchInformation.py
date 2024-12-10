@@ -288,7 +288,7 @@ class DifficultyDropdown(discord.ui.Select):
         driver = webdriver.Chrome(options=options)
         driver.get(selected_url)
         driver.set_window_size(5000, 2000)
-        wait = WebDriverWait(driver, 15)
+        wait = WebDriverWait(driver, 20)
         table = wait.until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table.l td.tbg"))
         )
