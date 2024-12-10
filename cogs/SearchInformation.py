@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
 import datetime
 import os
 import discord
@@ -289,8 +290,10 @@ class DifficultyDropdown(discord.ui.Select):
         driver.get(selected_url)
         driver.set_window_size(5000, 2000)
         wait = WebDriverWait(driver, 20)
-        table = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "table.l td.tbg"))
+        table = await asyncio.to_thread(
+            lambda: WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "table.l td.tbg"))
+            )
         )
         file = discord.File(BytesIO(table.screenshot_as_png), filename="image.jpg")
         driver.quit()
