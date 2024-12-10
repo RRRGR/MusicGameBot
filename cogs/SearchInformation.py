@@ -9,12 +9,9 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
 from typing import List
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from io import BytesIO
+from PIL import Image
+import requests
 
 from api.api import MusicGameBotAPI
 from MusicGameBot import PATH_TO_IMAGE
@@ -259,6 +256,26 @@ class DifficultyDropdown(discord.ui.Select):
             options=options,
         )
 
+    def download_image(self, url: str):
+        response = requests.get(url)
+        response.raise_for_status()
+        return Image.open(BytesIO(response.content)).convert("RGBA")
+
+    def create_composite(
+        self,
+        background_url: str,
+        overlay_url: str,
+        bar_url: str,
+    ) -> Image:
+        background = self.download_image(background_url)
+        bar = self.download_image(bar_url)
+        overlay = self.download_image(overlay_url)
+        composite = Image.new("RGBA", background.size, (0, 0, 0, 255))
+        composite.paste(background, (0, 0), background)
+        composite.paste(overlay, (0, 0), overlay)
+        composite.paste(bar, (0, 0), bar)
+        return composite
+
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
         song_list = self.song_list
@@ -281,22 +298,24 @@ class DifficultyDropdown(discord.ui.Select):
                     content=f"Chart Not Found ({song_title} [{selected_difficulty}])",
                     view=None,
                 )
+        base_path = selected_url.rsplit("/", 1)[0]
+        file_name = selected_url.split("/")[-1].split(".")[0]
+        file_id = "".join([c for c in file_name if c.isdigit()])
+        file_type = file_name[len(file_id) :]
 
-        options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        driver = webdriver.Chrome(options=options)
-        driver.get(selected_url)
-        driver.set_window_size(5000, 2000)
-        wait = WebDriverWait(driver, 20)
-        table = await asyncio.to_thread(
-            lambda: WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "table.l td.tbg"))
-            )
+        background_url = f"{base_path}/bg/{file_id}bg.png"
+        data_url = f"{base_path}/obj/data{file_id}{file_type}.png"
+        bar_url = f"{base_path}/bg/{file_id}bar.png"
+
+        composite = self.create_composite(
+            background_url,
+            data_url,
+            bar_url,
         )
-        file = discord.File(BytesIO(table.screenshot_as_png), filename="image.jpg")
-        driver.quit()
+        fileio = BytesIO()
+        composite.save(fileio, format="png")
+        fileio.seek(0)
+        file = discord.File(fileio, filename="image.png")
         if interaction.response.is_done():
             await interaction.followup.edit_message(
                 message_id=interaction.message.id,
