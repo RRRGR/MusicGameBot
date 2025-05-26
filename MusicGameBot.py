@@ -30,9 +30,11 @@ GG_ID = int(getenv("GG_ID"))
 OO_ID = int(getenv("OO_ID"))
 SPREADSHEET_URL = getenv("SPREADSHEET_URL")
 OO_JOIN_COMMENT = getenv("OO_JOIN_COMMENT")
+GEMINI_API_KEY = getenv("GEMINI_API_KEY")
 
 INITIAL_EXTENSIONS = [
     "cogs.Admin",
+    "cogs.AI",
     "cogs.Downloader",
     "cogs.EarthMC",
     "cogs.Emoji",
