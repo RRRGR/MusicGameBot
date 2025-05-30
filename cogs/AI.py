@@ -1,3 +1,4 @@
+import functools
 from MusicGameBot import GEMINI_API_KEY
 from discord.ext import commands
 from discord.ext.commands import Bot
@@ -14,7 +15,6 @@ class ChatCog(commands.Cog):
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
-        await self.bot.process_commands(message)
         if self.bot.user.mentioned_in(message):
             await self.handle_message(message)
 
@@ -31,8 +31,21 @@ class ChatCog(commands.Cog):
                 if self.bot.user in message.mentions:
                     mention = f"<@!{self.bot.user.id}>"
                     content = content.replace(mention, "").strip()
-                response = chat.send_message(content)
-                await message.reply(response.text)
+                response = await self.bot.loop.run_in_executor(
+                    None, functools.partial(chat.send_message, content)
+                )
+                text_to_send = response.text
+                limit = 2000
+                if len(text_to_send) <= limit:
+                    await message.reply(text_to_send)
+                else:
+                    parts = []
+                    while len(text_to_send) > 0:
+                        parts.append(text_to_send[:limit])
+                        text_to_send = text_to_send[limit:]
+                    sent_message = await message.reply(parts[0])
+                    for i in range(1, len(parts)):
+                        sent_message = await sent_message.reply(parts[i])
             except Exception as e:
                 print(f"Error generating Gemini response: {e}")
                 await message.reply("Error generating response.")
