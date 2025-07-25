@@ -3,6 +3,7 @@ from MusicGameBot import GEMINI_API_KEY
 from discord.ext import commands
 from discord.ext.commands import Bot
 from google import genai
+from google.genai import types
 
 
 class ChatCog(commands.Cog):
@@ -15,25 +16,44 @@ class ChatCog(commands.Cog):
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
-        if self.bot.user.mentioned_in(message):
+        if self.bot.user.mentioned_in(message) and self.bot.user in message.mentions:
             await self.handle_message(message)
 
     async def handle_message(self, message):
         user_id = str(message.author.id)
-        if user_id not in self.chats:
-            self.chats[user_id] = self.client.chats.create(
-                model="gemini-2.5-flash-preview-05-20"
-            )
-        chat = self.chats[user_id]
         content = message.content
+        if self.bot.user in message.mentions:
+            mention = f"<@!{self.bot.user.id}>"
+            content = content.replace(mention, "").strip()
+
+        if user_id not in self.chats:
+            self.chats[user_id] = self.client.chats.create(model="gemini-2.5-flash")
+        chat = self.chats[user_id]
+
         async with message.channel.typing():
             try:
-                if self.bot.user in message.mentions:
-                    mention = f"<@!{self.bot.user.id}>"
-                    content = content.replace(mention, "").strip()
-                response = await self.bot.loop.run_in_executor(
-                    None, functools.partial(chat.send_message, content)
-                )
+                image_bytes = None
+                if message.attachments:
+                    attachment = message.attachments[0]
+                    if any(
+                        attachment.filename.lower().endswith(ext)
+                        for ext in [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+                    ):
+                        image_bytes = await attachment.read()
+
+                if image_bytes:
+                    image_part = types.Part.from_bytes(
+                        data=image_bytes, mime_type=attachment.content_type
+                    )
+                    contents = [content, image_part]
+                    response = await self.bot.loop.run_in_executor(
+                        None, functools.partial(chat.send_message, contents)
+                    )
+                else:
+                    response = await self.bot.loop.run_in_executor(
+                        None, functools.partial(chat.send_message, content)
+                    )
+
                 text_to_send = response.text
                 limit = 2000
                 if len(text_to_send) <= limit:
