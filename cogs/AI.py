@@ -27,7 +27,7 @@ class ChatCog(commands.Cog):
             content = content.replace(mention, "").strip()
 
         if user_id not in self.chats:
-            self.chats[user_id] = self.client.chats.create(model="gemini-2.5-flash")
+            self.chats[user_id] = self.client.chats.create(model="gemini-3-flash")
         chat = self.chats[user_id]
 
         async with message.channel.typing():
