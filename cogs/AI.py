@@ -1,4 +1,5 @@
 import functools
+import time
 from MusicGameBot import GEMINI_API_KEY
 from discord.ext import commands
 from discord.ext.commands import Bot
@@ -7,14 +8,21 @@ from google.genai import types
 
 
 class ChatCog(commands.Cog):
-    MODEL_FALLBACKS = ("gemini-3.5-flash", "gemini-3.1-flash-lite")
+    MODEL_FALLBACKS = (
+        "gemini-3.5-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+    )
     DEFAULT_SEARCH_ENABLED = True
+    FALLBACK_RETRY_SECONDS = 60 * 60
 
     def __init__(self, bot: Bot):
         self.bot = bot
         self.client = genai.Client(api_key=GEMINI_API_KEY)
         self.chats = {}
         self.search_settings = {}
+        self.model_retry_after = {}
 
     def is_search_enabled(self, user_id: str) -> bool:
         return self.search_settings.get(user_id, self.DEFAULT_SEARCH_ENABLED)
@@ -48,9 +56,24 @@ class ChatCog(commands.Cog):
             for keyword in ("quota", "resource_exhausted", "rate limit", "429")
         )
 
+    def mark_model_quota_exhausted(self, user_id: str, model: str):
+        self.model_retry_after[(user_id, model)] = (
+            time.monotonic() + self.FALLBACK_RETRY_SECONDS
+        )
+
+    def get_available_models(self, user_id: str):
+        now = time.monotonic()
+        available_models = [
+            model
+            for model in self.MODEL_FALLBACKS
+            if self.model_retry_after.get((user_id, model), 0) <= now
+        ]
+        return available_models or [self.MODEL_FALLBACKS[-1]]
+
     async def send_gemini_message(self, user_id: str, content):
         last_error = None
-        for model in self.MODEL_FALLBACKS:
+        available_models = self.get_available_models(user_id)
+        for model in available_models:
             chat = self.get_chat(user_id, model)
             try:
                 response = await self.bot.loop.run_in_executor(
@@ -60,16 +83,18 @@ class ChatCog(commands.Cog):
                 return response, model, None
             except Exception as e:
                 last_error = e
-                is_last_model = model == self.MODEL_FALLBACKS[-1]
-                if self.is_quota_error(e) and not is_last_model:
+                is_last_available_model = model == available_models[-1]
+                if self.is_quota_error(e):
+                    self.mark_model_quota_exhausted(user_id, model)
+                if self.is_quota_error(e) and not is_last_available_model:
                     print(
                         f"Gemini quota reached on {model}. "
-                        f"Falling back to the next model: {e}"
+                        f"Falling back to the next model for 1 hour: {e}"
                     )
                     continue
                 return None, model, e
 
-        return None, self.MODEL_FALLBACKS[-1], last_error
+        return None, available_models[-1], last_error
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -119,7 +144,7 @@ class ChatCog(commands.Cog):
                     )
                     return
 
-                text_to_send = response.text
+                text_to_send = f"{response.text} ({model})"
                 limit = 2000
                 if len(text_to_send) <= limit:
                     await message.reply(text_to_send)
