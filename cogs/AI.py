@@ -8,7 +8,11 @@ from google.genai import types
 
 
 class ChatCog(commands.Cog):
-    MODEL_FALLBACKS = (
+    SEARCH_MODEL_FALLBACKS = (
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+    )
+    NO_SEARCH_MODEL_FALLBACKS = (
         "gemini-3.5-flash",
         "gemini-3.1-flash-lite",
         "gemini-2.5-flash",
@@ -27,8 +31,15 @@ class ChatCog(commands.Cog):
     def is_search_enabled(self, user_id: str) -> bool:
         return self.search_settings.get(user_id, self.DEFAULT_SEARCH_ENABLED)
 
-    def create_chat(self, model: str, search_enabled: bool):
+    def get_model_fallbacks(self, user_id: str):
+        if self.is_search_enabled(user_id):
+            return self.SEARCH_MODEL_FALLBACKS
+        return self.NO_SEARCH_MODEL_FALLBACKS
+
+    def create_chat(self, model: str, search_enabled: bool, history=None):
         kwargs = {"model": model}
+        if history:
+            kwargs["history"] = history
         if search_enabled:
             grounding_tool = types.Tool(google_search=types.GoogleSearch())
             kwargs["config"] = types.GenerateContentConfig(tools=[grounding_tool])
@@ -36,10 +47,25 @@ class ChatCog(commands.Cog):
 
     def get_chat(self, user_id: str, model: str):
         search_enabled = self.is_search_enabled(user_id)
-        user_chats = self.chats.setdefault(user_id, {})
-        if model not in user_chats:
-            user_chats[model] = self.create_chat(model, search_enabled)
-        return user_chats[model]
+        current = self.chats.get(user_id)
+        if (
+            current is not None
+            and current["model"] == model
+            and current["search_enabled"] == search_enabled
+        ):
+            return current["chat"]
+
+        # A model fallback or search setting change must not discard the
+        # conversation. Seed the replacement chat with the successful history
+        # accumulated by the previous one.
+        history = current["chat"].get_history() if current is not None else None
+        chat = self.create_chat(model, search_enabled, history)
+        self.chats[user_id] = {
+            "chat": chat,
+            "model": model,
+            "search_enabled": search_enabled,
+        }
+        return chat
 
     def format_error(self, error: Exception) -> str:
         error_message = str(error)
@@ -63,12 +89,13 @@ class ChatCog(commands.Cog):
 
     def get_available_models(self, user_id: str):
         now = time.monotonic()
+        model_fallbacks = self.get_model_fallbacks(user_id)
         available_models = [
             model
-            for model in self.MODEL_FALLBACKS
+            for model in model_fallbacks
             if self.model_retry_after.get((user_id, model), 0) <= now
         ]
-        return available_models or [self.MODEL_FALLBACKS[-1]]
+        return available_models or [model_fallbacks[-1]]
 
     async def send_gemini_message(self, user_id: str, content):
         last_error = None
@@ -183,12 +210,10 @@ class ChatCog(commands.Cog):
         value = value.lower()
         if value == "on":
             self.search_settings[user_id] = True
-            self.chats.pop(user_id, None)
-            await ctx.send("AI search turned on. Conversation reset.")
+            await ctx.send("AI search turned on.")
         elif value == "off":
             self.search_settings[user_id] = False
-            self.chats.pop(user_id, None)
-            await ctx.send("AI search turned off. Conversation reset.")
+            await ctx.send("AI search turned off.")
         else:
             await ctx.send("Usage: !ai_search on / !ai_search off")
 
